@@ -7,17 +7,25 @@ Event Sink ClickHouse
 Purpose
 *******
 
-A listener for `Open edX events`_ to send them to ClickHouse. This project
-acts as a plugin to the Edx Platform, listens for configured Open edX events,
-and sends them to a ClickHouse database for analytics or other processing. This
-is being maintained as part of the Open Analytics Reference System (OARS)
-project.
+This project acts as a plugin to the `Edx Platform`_, listens for
+configured `Open edX events`_, and sends them to a `ClickHouse`_ database for
+analytics or other processing. This is being maintained as part of the Open
+Analytics Reference System (`OARS`_) project.
 
 OARS consumes the data sent to ClickHouse by this plugin as part of data
 enrichment for reporting, or capturing data that otherwise does not fit in
 xAPI.
 
+Currently the only sink is in the CMS. It listens for the ``COURSE_PUBLISHED``
+signal and serializes a subset of the published course blocks into one table
+and the relationships between blocks into another table. With those we are
+able to recreate the "graph" of the course and get relevant data, such as
+block names, for reporting.
+
 .. _Open edX events: https://github.com/openedx/openedx-events
+.. _Edx Platform: https://github.com/openedx/edx-platform
+.. _ClickHouse: https://clickhouse.com
+.. _OARS: https://docs.openedx.org/projects/openedx-oars/en/latest/index.html
 
 Getting Started
 ***************
@@ -75,12 +83,38 @@ Every time you develop something in this repo
 Deploying
 =========
 
-TODO: How can a new user go about deploying this component? Is it just a few
-commands? Is there a larger how-to that should be linked here?
+This plugin will be deployed by default in an OARS Tutor environment. For other
+deployments install the library or add it to private requirements of your
+virtual environment ( ``requirements/private.txt`` ).
 
-PLACEHOLDER: For details on how to deploy this component, see the `deployment how-to`_
+#. Run ``pip install openedx-event-sink-clickhouse``.
 
-.. _deployment how-to: https://docs.openedx.org/projects/openedx-event-sink-clickhouse/how-tos/how-to-deploy-this-component.html
+#. Run migrations:
+
+- ``python manage.py lms migrate``
+
+- ``python manage.py cms migrate``
+
+#. Restart LMS service and celery workers of edx-platform.
+
+Configuration
+===============
+
+Currently all events will be listened to by default (there is only one). So
+the only necessary configuration is a ClickHouse connection:
+
+.. code-block::
+
+    EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG = {
+        # URL to a running ClickHouse server's HTTP interface. ex: https://foo.openedx.org:8443/ or
+        # http://foo.openedx.org:8123/ . Note that we only support the ClickHouse HTTP interface
+        # to avoid pulling in more dependencies to the platform than necessary.
+        "url": "http://clickhouse:8123",
+        "username": "changeme",
+        "password": "changeme",
+        "database": "event_sink",
+        "timeout_secs": 3,
+    }
 
 Getting Help
 ************

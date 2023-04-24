@@ -112,7 +112,13 @@ setup(
         include=['event_sink_clickhouse', 'event_sink_clickhouse.*'],
         exclude=["*tests"],
     ),
-
+    entry_points={
+        "lms.djangoapp": [
+        ],
+        "cms.djangoapp": [
+            "event-sink-clickhouse = event_sink_clickhouse.apps:EventSinkClickhouseConfig",
+        ],
+    },
     include_package_data=True,
     install_requires=load_requirements('requirements/base.in'),
     python_requires=">=3.8",

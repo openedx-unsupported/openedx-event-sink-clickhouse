@@ -1,5 +1,8 @@
 # Core requirements for using this application
 -c constraints.txt
 
+celery             # Asynchronous task execution library
 Django             # Web application framework
-
+requests           # HTTP request library
+edx-django-utils   # Django utilities, we use caching and monitoring
+edx-opaque-keys    # Parsing library for course and usage keys
