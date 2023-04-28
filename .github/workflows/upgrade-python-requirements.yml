@@ -16,9 +16,9 @@ jobs:
     with:
       branch: ${{ github.event.inputs.branch || 'main' }}
       # optional parameters below; fill in if you'd like github or email notifications
-      user_reviewers: "bmtcril"
+      user_reviewers: "openedx-event-sink-clickhouse-maintainers"
       # team_reviewers: ""
-      email_address: "bmesick@axim.org"
+      # email_address: ""
       # send_success_notification: false
     secrets:
       requirements_bot_github_token: ${{ secrets.REQUIREMENTS_BOT_GITHUB_TOKEN }}

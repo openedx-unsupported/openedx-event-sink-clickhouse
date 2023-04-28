@@ -221,7 +221,7 @@ pyyaml==6.0
     #   responses
 readme-renderer==37.3
     # via twine
-requests==2.29.0
+requests==2.30.0
     # via
     #   -r requirements/test.txt
     #   requests-toolbelt
@@ -300,7 +300,7 @@ typing-extensions==4.5.0
     # via
     #   pydata-sphinx-theme
     #   rich
-urllib3==1.26.15
+urllib3==2.0.2
     # via
     #   -r requirements/test.txt
     #   requests
