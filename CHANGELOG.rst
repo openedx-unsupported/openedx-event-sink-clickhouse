@@ -14,7 +14,9 @@ Change Log
 Unreleased
 **********
 
-*
+* First functional version, includes a CMS listener for COURSE_PUBLISHED
+* README updates
+* New configuration settings for connection to ClickHouse
 
 0.1.0 – 2023-04-24
 **********************************************
