@@ -12,6 +12,7 @@ LTI passwords and other secrets. We just take the fields necessary for reporting
 
 import csv
 import io
+import uuid
 
 import requests
 from django.utils import timezone
@@ -86,7 +87,7 @@ class CoursePublishedSink(BaseSink):
         return str(approx_last_published)
 
     @staticmethod
-    def serialize_item(item, index, detached_xblock_types):
+    def serialize_item(item, index, detached_xblock_types, dump_id, dump_timestamp):
         """
         Args:
             item: an XBlock
@@ -109,9 +110,10 @@ class CoursePublishedSink(BaseSink):
             'display_name': item.display_name_with_default.replace("'", "\'"),
             'block_type': block_type,
             'detached': 1 if block_type in detached_xblock_types else 0,
-            'edited_on': str(getattr(item, 'edited_on', '')),
-            'time_last_dumped': str(timezone.now()),
             'order': index,
+            'edited_on': str(getattr(item, 'edited_on', '')),
+            'dump_id': dump_id,
+            'time_last_dumped': dump_timestamp,
         }
 
         return rtn_fields
@@ -130,6 +132,9 @@ class CoursePublishedSink(BaseSink):
         modulestore = CoursePublishedSink._get_modulestore()
         detached_xblock_types = CoursePublishedSink._get_detached_xblock_types()
 
+        dump_id = str(uuid.uuid4())
+        dump_timestamp = str(timezone.now())
+
         # create a location to node mapping we'll need later for
         # writing relationships
         location_to_node = {}
@@ -139,7 +144,7 @@ class CoursePublishedSink(BaseSink):
         i = 0
         for item in items:
             i += 1
-            fields = self.serialize_item(item, i, detached_xblock_types)
+            fields = self.serialize_item(item, i, detached_xblock_types, dump_id, dump_timestamp)
             location_to_node[self.strip_branch_and_version(item.location)] = fields
 
         # create relationships
@@ -154,7 +159,9 @@ class CoursePublishedSink(BaseSink):
                         'course_key': str(course_id),
                         'parent_location': str(parent_node["location"]),
                         'child_location': str(child_node["location"]),
-                        'order': index
+                        'order': index,
+                        'dump_id': dump_id,
+                        'time_last_dumped': dump_timestamp,
                     }
                     relationships.append(relationship)
 
