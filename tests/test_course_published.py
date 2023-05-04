@@ -6,6 +6,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+import requests
 import responses
 from responses import matchers
 from responses.registries import OrderedRegistry
@@ -83,19 +84,21 @@ def test_course_publish_clickhouse_error(mock_modulestore, mock_detached, caplog
     # This will raise an exception when we try to post to ClickHouse
     responses.post(
         "https://foo.bar/",
-        body=Exception("Bogus test exception in ClickHouse call")
+        body="Test Bad Request error",
+        status=400
     )
 
     course = course_str_factory()
 
-    with pytest.raises(Exception):
+    with pytest.raises(requests.exceptions.RequestException):
         dump_course_to_clickhouse(course)
 
     # Make sure everything was called as we expect
     assert mock_modulestore.call_count == 1
     assert mock_detached.call_count == 1
 
-    # Make sure our log message went through.
+    # Make sure our log messages went through.
+    assert "Test Bad Request error" in caplog.text
     assert f"Error trying to dump course {course} to ClickHouse!" in caplog.text
 
 

@@ -8,7 +8,7 @@ from celery import shared_task
 from edx_django_utils.monitoring import set_code_owner_attribute
 from opaque_keys.edx.keys import CourseKey
 
-from .sinks.course_published import CoursePublishedSink
+from event_sink_clickhouse.sinks.course_published import CoursePublishedSink
 
 log = logging.getLogger(__name__)
 celery_log = logging.getLogger('edx.celery.task')

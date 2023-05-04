@@ -19,12 +19,10 @@ class EventSinkClickhouseConfig(AppConfig):
             'lms.djangoapp': {
                 'production': {PluginSettings.RELATIVE_PATH: 'settings.production'},
                 'common': {PluginSettings.RELATIVE_PATH: 'settings.common'},
-                'devstack': {PluginSettings.RELATIVE_PATH: 'settings.devstack'},
             },
             'cms.djangoapp': {
                 'production': {PluginSettings.RELATIVE_PATH: 'settings.production'},
                 'common': {PluginSettings.RELATIVE_PATH: 'settings.common'},
-                'devstack': {PluginSettings.RELATIVE_PATH: 'settings.devstack'},
             }
         },
         # Configuration setting for Plugin Signals for this app.

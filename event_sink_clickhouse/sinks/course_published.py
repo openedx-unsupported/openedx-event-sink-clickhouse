@@ -17,7 +17,13 @@ import uuid
 import requests
 from django.utils import timezone
 
-from .base_sink import BaseSink
+from event_sink_clickhouse.sinks.base_sink import BaseSink
+
+# Defaults we want to ensure we fail early on bulk inserts
+CLICKHOUSE_BULK_INSERT_PARAMS = {
+    "input_format_allow_errors_num": 1,
+    "input_format_allow_errors_ratio": 0.1,
+}
 
 
 class CoursePublishedSink(BaseSink):
@@ -101,7 +107,7 @@ class CoursePublishedSink(BaseSink):
         course_key = item.scope_ids.usage_id.course_key
         block_type = item.scope_ids.block_type
 
-        rtn_fields = {
+        serialized_block = {
             'org': course_key.org,
             'course_key': str(course_key),
             'course': course_key.course,
@@ -116,7 +122,7 @@ class CoursePublishedSink(BaseSink):
             'time_last_dumped': dump_timestamp,
         }
 
-        return rtn_fields
+        return serialized_block
 
     def serialize_course(self, course_id):
         """
@@ -135,19 +141,19 @@ class CoursePublishedSink(BaseSink):
         dump_id = str(uuid.uuid4())
         dump_timestamp = str(timezone.now())
 
-        # create a location to node mapping we'll need later for
-        # writing relationships
+        # Create a location to node mapping as a lookup for writing relationships later
         location_to_node = {}
         items = modulestore.get_items(course_id)
 
-        # create nodes
-        i = 0
+        # Serialize the XBlocks to dicts and map them with their location as keys the
+        # whole map needs to be completed before we can define relationships
+        index = 0
         for item in items:
-            i += 1
-            fields = self.serialize_item(item, i, detached_xblock_types, dump_id, dump_timestamp)
+            index += 1
+            fields = self.serialize_item(item, index, detached_xblock_types, dump_id, dump_timestamp)
             location_to_node[self.strip_branch_and_version(item.location)] = fields
 
-        # create relationships
+        # Create a list of relationships between blocks, using their locations as identifiers
         relationships = []
         for item in items:
             for index, child in enumerate(item.get_children()):
@@ -168,63 +174,74 @@ class CoursePublishedSink(BaseSink):
         nodes = list(location_to_node.values())
         return nodes, relationships
 
+    def _send_xblocks(self, serialized_xblocks):
+        """
+        Create the insert query and CSV to send the serialized XBlocks to ClickHouse.
+        """
+        params = CLICKHOUSE_BULK_INSERT_PARAMS.copy()
+
+        # "query" is a special param for the query, it's the best way to get the FORMAT CSV in there.
+        params["query"] = f"INSERT INTO {self.ch_database}.course_blocks FORMAT CSV"
+
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+
+        for node in serialized_xblocks:
+            writer.writerow(node.values())
+
+        request = requests.Request(
+            'POST',
+            self.ch_url,
+            data=output.getvalue(),
+            params=params,
+            auth=self.ch_auth
+        )
+
+        self._send_clickhouse_request(request)
+
+    def _send_relationships(self, relationships):
+        """
+        Create the insert query and CSV to send the serialized relationships to ClickHouse.
+        """
+        params = CLICKHOUSE_BULK_INSERT_PARAMS.copy()
+
+        # "query" is a special param for the query, it's the best way to get the FORMAT CSV in there.
+        params["query"] = f"INSERT INTO {self.ch_database}.course_relationships FORMAT CSV"
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+
+        for relationship in relationships:
+            writer.writerow(relationship.values())
+
+        request = requests.Request(
+            'POST',
+            self.ch_url,
+            data=output.getvalue(),
+            params=params,
+            auth=self.ch_auth
+        )
+
+        self._send_clickhouse_request(request)
+
     def dump(self, course_key):
         """
         Do the serialization and send to ClickHouse
         """
-        nodes, relationships = self.serialize_course(course_key)
+        serialized_blocks, relationships = self.serialize_course(course_key)
 
         self.log.info(
-            "Now dumping %s to ClickHouse: %d nodes and %d relationships",
+            "Now dumping %s to ClickHouse: %d serialized_blocks and %d relationships",
             course_key,
-            len(nodes),
+            len(serialized_blocks),
             len(relationships),
         )
 
         course_string = str(course_key)
 
         try:
-            # Params that begin with "param_" will be used in the query replacement
-            # all others are ClickHouse settings.
-            params = {
-                # Fail early on bulk inserts
-                "input_format_allow_errors_num": 1,
-                "input_format_allow_errors_ratio": 0.1,
-            }
-
-            # "query" is a special param for the query, it's the best way to get the FORMAT CSV in there.
-            params["query"] = f"INSERT INTO {self.ch_database}.course_blocks FORMAT CSV"
-
-            output = io.StringIO()
-            writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
-
-            for node in nodes:
-                writer.writerow(node.values())
-
-            response = requests.post(self.ch_url, data=output.getvalue(), params=params, auth=self.ch_auth,
-                                     timeout=self.ch_timeout_secs)
-            self.log.info(response.headers)
-            self.log.info(response)
-            self.log.info(response.text)
-            response.raise_for_status()
-
-            # Just overwriting the previous query
-            params["query"] = f"INSERT INTO {self.ch_database}.course_relationships FORMAT CSV"
-            output = io.StringIO()
-            writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
-
-            for relationship in relationships:
-                writer.writerow(relationship.values())
-
-            response = requests.post(self.ch_url, data=output.getvalue(), params=params, auth=self.ch_auth,
-                                     timeout=self.ch_timeout_secs)
-            self.log.info(response.headers)
-            self.log.info(response)
-            self.log.info(response.text)
-            response.raise_for_status()
-
+            self._send_xblocks(serialized_blocks)
+            self._send_relationships(relationships)
             self.log.info("Completed dumping %s to ClickHouse", course_key)
-
         except Exception:
             self.log.exception(
                 "Error trying to dump course %s to ClickHouse!",
