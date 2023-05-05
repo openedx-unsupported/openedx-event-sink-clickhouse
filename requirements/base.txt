@@ -67,7 +67,7 @@ pytz==2023.3
     # via
     #   celery
     #   django
-requests==2.29.0
+requests==2.30.0
     # via -r requirements/base.in
 six==1.16.0
     # via click-repl
@@ -77,7 +77,7 @@ stevedore==5.0.0
     # via
     #   edx-django-utils
     #   edx-opaque-keys
-urllib3==1.26.15
+urllib3==2.0.2
     # via requests
 vine==5.0.0
     # via

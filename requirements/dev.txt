@@ -266,7 +266,7 @@ pyyaml==6.0
     #   code-annotations
     #   edx-i18n-tools
     #   responses
-requests==2.29.0
+requests==2.30.0
     # via
     #   -r requirements/quality.txt
     #   responses
@@ -328,7 +328,7 @@ typing-extensions==4.5.0
     #   -r requirements/quality.txt
     #   astroid
     #   pylint
-urllib3==1.26.15
+urllib3==2.0.2
     # via
     #   -r requirements/quality.txt
     #   requests

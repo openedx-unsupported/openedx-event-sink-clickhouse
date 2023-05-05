@@ -139,7 +139,7 @@ pyyaml==6.0
     # via
     #   code-annotations
     #   responses
-requests==2.29.0
+requests==2.30.0
     # via
     #   -r requirements/base.txt
     #   responses
@@ -167,7 +167,7 @@ tomli==2.0.1
     #   pytest
 types-pyyaml==6.0.12.9
     # via responses
-urllib3==1.26.15
+urllib3==2.0.2
     # via
     #   -r requirements/base.txt
     #   requests
