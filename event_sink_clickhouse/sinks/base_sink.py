@@ -20,6 +20,7 @@ class BaseSink:
                                       settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG["password"])
         self.ch_database = settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG["database"]
         self.ch_timeout_secs = settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG["timeout_secs"]
+        self.connection_overrides = connection_overrides
 
         # If any overrides to the ClickHouse connection
         if connection_overrides:
@@ -39,6 +40,7 @@ class BaseSink:
         try:
             response = session.send(prepared_request, timeout=self.ch_timeout_secs)
             response.raise_for_status()
+            return response
         except requests.exceptions.HTTPError as e:
             self.log.error(str(e))
             self.log.error(e.response.headers)

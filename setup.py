@@ -104,6 +104,7 @@ setup(
     name='openedx_event_sink_clickhouse',
     version=VERSION,
     description="""A sink for Open edX events to send them to ClickHouse""",
+    long_description_content_type="text/x-rst",
     long_description=README + '\n\n' + CHANGELOG,
     author='edX',
     author_email='oscm@edx.org',

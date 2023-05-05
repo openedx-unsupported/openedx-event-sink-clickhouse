@@ -16,11 +16,30 @@ OARS consumes the data sent to ClickHouse by this plugin as part of data
 enrichment for reporting, or capturing data that otherwise does not fit in
 xAPI.
 
+Sinks
+*****
+
 Currently the only sink is in the CMS. It listens for the ``COURSE_PUBLISHED``
 signal and serializes a subset of the published course blocks into one table
 and the relationships between blocks into another table. With those we are
 able to recreate the "graph" of the course and get relevant data, such as
 block names, for reporting.
+
+Commands
+********
+
+In addition to being an event listener, this package provides commands for
+exporting the same data in bulk. This allows bootstrapping a new data platform
+or backfilling lost or missing data. Currently the only command is the Django
+command for the ``COURSE_PUBLISHED`` data:
+
+``python manage.py cms dump_courses_to_clickhouse``
+
+This command allows bulk export of all courses, or various limiting factors.
+Please see the command help for details:
+
+``python manage.py cms dump_courses_to_clickhouse -h``
+
 
 .. _Open edX events: https://github.com/openedx/openedx-events
 .. _Edx Platform: https://github.com/openedx/edx-platform

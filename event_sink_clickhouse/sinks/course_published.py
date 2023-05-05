@@ -11,11 +11,14 @@ LTI passwords and other secrets. We just take the fields necessary for reporting
 """
 
 import csv
+import datetime
 import io
+import json
 import uuid
 
 import requests
 from django.utils import timezone
+from opaque_keys.edx.keys import CourseKey
 
 from event_sink_clickhouse.sinks.base_sink import BaseSink
 
@@ -31,7 +34,7 @@ class CoursePublishedSink(BaseSink):
     Event sink for the COURSE_PUBLISHED signal
     """
     @staticmethod
-    def _get_detached_xblock_types():
+    def _get_detached_xblock_types():  # pragma: no cover
         """
         Import and return DETACHED_XBLOCK_TYPES.
         Placed here to avoid model import at startup and to facilitate mocking them in testing.
@@ -41,7 +44,7 @@ class CoursePublishedSink(BaseSink):
         return DETACHED_XBLOCK_TYPES
 
     @staticmethod
-    def _get_modulestore():
+    def _get_modulestore():  # pragma: no cover
         """
         Import and return modulestore.
         Placed here to avoid model import at startup and to facilitate mocking them in testing.
@@ -51,7 +54,7 @@ class CoursePublishedSink(BaseSink):
         return modulestore()
 
     @staticmethod
-    def _get_course_overview_model():
+    def _get_course_overview_model():  # pragma: no cover
         """
         Import and return CourseOverview.
         Placed here to avoid model import at startup and to facilitate mocking them in testing.
@@ -71,28 +74,6 @@ class CoursePublishedSink(BaseSink):
         return location.for_branch(None)
 
     @staticmethod
-    def get_course_last_published(course_key):
-        """
-        Get approximate last publish date for the given course.
-
-        We use the 'modified' column in the CourseOverview table as a quick and easy
-        (although perhaps inexact) way of determining when a course was last
-        published. This works because CourseOverview rows are re-written upon
-        course publish.
-
-        Args:
-            course_key: a CourseKey
-
-        Returns: The datetime the course was last published at, stringified.
-            Uses Python's default str(...) implementation for datetimes, which
-            is sortable and similar to ISO 8601:
-            https://docs.python.org/3/library/datetime.html#datetime.date.__str__
-        """
-        CourseOverview = CoursePublishedSink._get_course_overview_model()
-        approx_last_published = CourseOverview.get_from_id(course_key).modified
-        return str(approx_last_published)
-
-    @staticmethod
     def serialize_item(item, index, detached_xblock_types, dump_id, dump_timestamp):
         """
         Args:
@@ -103,19 +84,37 @@ class CoursePublishedSink(BaseSink):
             fields: a *limited* dictionary of an XBlock's field names and values
             block_type: the name of the XBlock's type (i.e. 'course'
             or 'problem')
+
+        Schema of the destination table, as defined in tutor-contrib-oars:
+            org              String NOT NULL,
+            course_key       String NOT NULL,
+            location         String NOT NULL,
+            display_name     String NOT NULL,
+            xblock_data_json String NOT NULL,
+            order            Int32 default 0,
+            edited_on        String NOT NULL,
+            dump_id          UUID NOT NULL,
+            time_last_dumped String NOT NULL
         """
         course_key = item.scope_ids.usage_id.course_key
         block_type = item.scope_ids.block_type
 
+        # Extra data not needed for the table to function, things can be
+        # added here without needing to rebuild the whole table.
+        json_data = {
+            'course': course_key.course,
+            'run': course_key.run,
+            'block_type': block_type,
+            'detached': 1 if block_type in detached_xblock_types else 0,
+        }
+
+        # Core table data, if things change here it's a big deal.
         serialized_block = {
             'org': course_key.org,
             'course_key': str(course_key),
-            'course': course_key.course,
-            'run': course_key.run,
             'location': str(item.location),
             'display_name': item.display_name_with_default.replace("'", "\'"),
-            'block_type': block_type,
-            'detached': 1 if block_type in detached_xblock_types else 0,
+            'xblock_data_json': json.dumps(json_data),
             'order': index,
             'edited_on': str(getattr(item, 'edited_on', '')),
             'dump_id': dump_id,
@@ -248,3 +247,146 @@ class CoursePublishedSink(BaseSink):
                 course_string
             )
             raise
+
+    @staticmethod
+    def get_course_last_published(course_key):
+        """
+        Get approximate last publish date for the given course.
+
+        We use the 'modified' column in the CourseOverview table as a quick and easy
+        (although perhaps inexact) way of determining when a course was last
+        published. This works because CourseOverview rows are re-written upon
+        course publish.
+
+        Args:
+            course_key: a CourseKey
+
+        Returns: The datetime the course was last published at, stringified.
+            Uses Python's default str(...) implementation for datetimes, which
+            is sortable and similar to ISO 8601:
+            https://docs.python.org/3/library/datetime.html#datetime.date.__str__
+        """
+        CourseOverview = CoursePublishedSink._get_course_overview_model()
+        approx_last_published = CourseOverview.get_from_id(course_key).modified
+        if approx_last_published:
+            return str(approx_last_published)
+
+        return None
+
+    def fetch_target_courses(self, courses=None, skipped_courses=None, force=None):
+        """
+        Yield a set of courses meeting the given criteria.
+
+        If no parameters are given, loads all course_keys from the
+        modulestore. Filters out course_keys in the `skip` parameter,
+        if provided.
+
+        Args:
+            courses: A list of string serializations of course keys.
+                For example, ["course-v1:org+course+run"].
+            skipped_courses: A list of string serializations of course keys to
+                be ignored.
+            force: Include all courses except those explicitly skipped via
+                skipped_courses
+        """
+        modulestore = CoursePublishedSink._get_modulestore()
+
+        if courses:
+            course_keys = [CourseKey.from_string(course) for course in courses]
+        else:
+            course_keys = [
+                course.id for course in modulestore.get_course_summaries()
+            ]
+
+        for course_key in course_keys:
+            if course_key in skipped_courses:
+                yield course_key, False, "Course is explicitly skipped"
+            elif force:
+                yield course_key, True, "Force is set"
+            else:
+                should_be_dumped, reason = self.should_dump_course(course_key)
+                yield course_key, should_be_dumped, reason
+
+    def get_course_last_dump_time(self, course_key):
+        """
+        Get the most recent dump time for this course from ClickHouse
+
+        Args:
+            course_key: a CourseKey
+
+        Returns: The datetime that the command was last run, converted into
+            text, or None, if there's no record of this command last being run.
+        """
+        params = {
+            "query": f"SELECT max(time_last_dumped) as time_last_dumped "
+                     f"FROM {self.ch_database}.course_blocks "
+                     f"WHERE course_key = '{course_key}'"
+        }
+
+        request = requests.Request(
+            'GET',
+            self.ch_url,
+            params=params,
+            auth=self.ch_auth
+        )
+
+        response = self._send_clickhouse_request(request)
+        response.raise_for_status()
+        if response.text:
+            # ClickHouse returns timestamps in the format: "2023-05-03 15:47:39.331024+00:00"
+            # Our internal comparisons use the str() of a datetime object, this handles that
+            # transformation so that downstream comparisons will work.
+            return str(datetime.datetime.fromisoformat(response.text.strip()))
+
+        # Course has never been dumped, return None
+        return None
+
+    def should_dump_course(self, course_key):
+        """
+        Only dump the course if it's been changed since the last time it's been
+        dumped.
+
+        Args:
+            course_key: a CourseKey object.
+
+        Returns:
+            - whether this course should be dumped (bool)
+            - reason why course needs, or does not need, to be dumped (string)
+        """
+
+        course_last_dump_time = self.get_course_last_dump_time(course_key)
+        self.log.error(course_key)
+        self.log.error(course_last_dump_time)
+
+        # If we don't have a record of the last time this command was run,
+        # we should serialize the course and dump it
+        if course_last_dump_time is None:
+            return True, "Course is not present in ClickHouse"
+
+        course_last_published_date = self.get_course_last_published(course_key)
+        self.log.error(course_last_published_date)
+
+        # If we've somehow dumped this course but there is no publish date
+        # skip it
+        if course_last_dump_time and course_last_published_date is None:
+            return False, "No last modified date in CourseOverview"
+
+        # Otherwise, dump it if it is newer
+        course_last_dump_time = datetime.datetime.strptime(course_last_dump_time, "%Y-%m-%d %H:%M:%S.%f+00:00")
+        course_last_published_date = datetime.datetime.strptime(
+            course_last_published_date,
+            "%Y-%m-%d %H:%M:%S.%f+00:00"
+        )
+        needs_dump = course_last_dump_time < course_last_published_date
+
+        if needs_dump:
+            reason = (
+                "Course has been published since last dump time - "
+                f"last dumped {course_last_dump_time} < last published {str(course_last_published_date)}"
+            )
+        else:
+            reason = (
+                f"Course has NOT been published since last dump time - "
+                f"last dumped {course_last_dump_time} >= last published {str(course_last_published_date)}"
+            )
+        return needs_dump, reason

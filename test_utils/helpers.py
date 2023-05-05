@@ -3,8 +3,10 @@ Helper functions for tests
 """
 
 import csv
+import json
 import random
 import string
+from collections import namedtuple
 from datetime import datetime
 from io import StringIO
 from unittest.mock import MagicMock, Mock
@@ -18,6 +20,9 @@ ORIG_IMPORT = __import__
 ORG = "testorg"
 COURSE = "testcourse"
 COURSE_RUN = "2023_Fall"
+
+FakeCourse = namedtuple("FakeCourse", ["id"])
+FakeCourseOverview = namedtuple("FakeCourseOverview", ["modified"])
 
 
 class FakeXBlock:
@@ -41,12 +46,13 @@ class FakeXBlock:
         return self.children
 
 
-def course_str_factory():
+def course_str_factory(course_id=None):
     """
     Return a valid course key string.
     """
-    course_str = f"course-v1:{ORG}+{COURSE}+{COURSE_RUN}"
-    return course_str
+    if not course_id:
+        return f"course-v1:{ORG}+{COURSE}+{COURSE_RUN}"
+    return f"course-v1:{ORG}+{course_id}+{COURSE_RUN}"
 
 
 def course_key_factory():
@@ -153,11 +159,20 @@ def check_block_csv_matcher(course):
                 block = course[i]
                 assert row[0] == block.location.org
                 assert row[1] == str(block.location.course_key)
-                assert row[2] == block.location.course
-                assert row[3] == block.location.run
-                assert row[4] == str(course[i].location)
-                assert row[5] == block.display_name_with_default
-                assert row[6] == str(block.block_type)
+                assert row[2] == str(course[i].location)
+                assert row[3] == block.display_name_with_default
+
+                block_json_data = {
+                    'course': block.location.course,
+                    'run': block.location.run,
+                    'block_type': str(block.block_type),
+                }
+                csv_json = json.loads(row[4])
+
+                # Check some json data
+                assert block_json_data["course"] == csv_json["course"]
+                assert block_json_data["run"] == csv_json["run"]
+                assert block_json_data["block_type"] == csv_json["block_type"]
                 i += 1
         except AssertionError as e:
             return False, f"Mismatch in row {i}: {e}"
@@ -197,8 +212,6 @@ def check_relationship_csv_matcher(course):
             # The CSV should be in the same order as our relationships, make sure
             # everything matches
             for row in reader:
-                print(row)
-                print(relationships[i])
                 relation = relationships[i]
                 assert row[0] == relation[0]
                 assert row[1] == relation[1]
