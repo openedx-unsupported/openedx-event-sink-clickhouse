@@ -83,6 +83,12 @@ Every time you develop something in this repo
 Deploying
 =========
 
+The Open edX Event Sink Clickhouse component is a django plugin which doesn't
+need independent deployment. Therefore, its setup is reasonably
+straightforward. First, it needs to be added to your service
+requirements, and then it will be installed alongside requirements
+of the service.
+
 This plugin will be deployed by default in an OARS Tutor environment. For other
 deployments install the library or add it to private requirements of your
 virtual environment ( ``requirements/private.txt`` ).
@@ -122,11 +128,7 @@ Getting Help
 Documentation
 =============
 
-PLACEHOLDER: Start by going through `the documentation`_.  If you need more help see below.
-
-.. _the documentation: https://docs.openedx.org/projects/openedx-event-sink-clickhouse
-
-(TODO: `Set up documentation <https://openedx.atlassian.net/wiki/spaces/DOC/pages/21627535/Publish+Documentation+on+Read+the+Docs>`_)
+See `documentation on Read the Docs <https://openedx-event-sink-clickhouse.readthedocs.io/en/latest/>`_.
 
 More Help
 =========
