@@ -27,7 +27,7 @@ build==0.10.0
     #   pip-tools
 celery==5.2.7
     # via -r requirements/quality.txt
-certifi==2022.12.7
+certifi==2023.5.7
     # via
     #   -r requirements/quality.txt
     #   requests
@@ -210,7 +210,7 @@ pydocstyle==6.3.0
     # via -r requirements/quality.txt
 pygments==2.15.1
     # via diff-cover
-pylint==2.17.3
+pylint==2.17.4
     # via
     #   -r requirements/quality.txt
     #   edx-lint
