@@ -15,9 +15,11 @@ from event_sink_clickhouse.sinks.course_published import CoursePublishedSink
 from event_sink_clickhouse.tasks import dump_course_to_clickhouse
 from test_utils.helpers import (
     check_block_csv_matcher,
+    check_overview_csv_matcher,
     check_relationship_csv_matcher,
     course_factory,
     course_str_factory,
+    fake_course_overview_factory,
     get_clickhouse_http_params,
     mock_course_overview,
     mock_detached_xblock_types,
@@ -25,24 +27,35 @@ from test_utils.helpers import (
 
 
 @responses.activate(registry=OrderedRegistry)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+@patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_course_overview_model")
 @patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_detached_xblock_types")
 @patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_modulestore")
-def test_course_publish_success(mock_modulestore, mock_detached):
+def test_course_publish_success(mock_modulestore, mock_detached, mock_overview):
     """
     Test of a successful end-to-end run.
     """
     # Create a fake course structure with a few fake XBlocks
     course = course_factory()
+    course_overview = fake_course_overview_factory(modified=datetime.now())
     mock_modulestore.return_value.get_items.return_value = course
 
     # Fake the "detached types" list since we can't import it here
     mock_detached.return_value = mock_detached_xblock_types()
 
+    mock_overview.return_value.get_from_id.return_value = course_overview
+
     # Use the responses library to catch the POSTs to ClickHouse
     # and match them against the expected values, including CSV
     # content
-    blocks_params, relationships_params = get_clickhouse_http_params()
+    course_overview_params, blocks_params, relationships_params = get_clickhouse_http_params()
 
+    responses.post(
+        "https://foo.bar/",
+        match=[
+            matchers.query_param_matcher(course_overview_params),
+            check_overview_csv_matcher(course_overview)
+        ],
+    )
     responses.post(
         "https://foo.bar/",
         match=[
@@ -67,15 +80,20 @@ def test_course_publish_success(mock_modulestore, mock_detached):
 
 
 @responses.activate(registry=OrderedRegistry)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+@patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_course_overview_model")
 @patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_detached_xblock_types")
 @patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_modulestore")
-def test_course_publish_clickhouse_error(mock_modulestore, mock_detached, caplog):
+# pytest:disable=unused-argument
+def test_course_publish_clickhouse_error(mock_modulestore, mock_detached, mock_overview, caplog):
     """
     Test the case where a ClickHouse POST fails.
     """
     course = course_factory()
     mock_modulestore.return_value.get_items.return_value = course
     mock_detached.return_value = mock_detached_xblock_types()
+
+    course_overview = fake_course_overview_factory(modified=datetime.now())
+    mock_overview.return_value.get_from_id.return_value = course_overview
 
     # This will raise an exception when we try to post to ClickHouse
     responses.post(
@@ -128,7 +146,7 @@ def test_no_last_published_date(mock_overview):
     # Fake a course with no modified date
     course = mock_course_overview()
     mock_overview.return_value = course
-    mock_overview.return_value.get_from_id.return_value.modified = None
+    mock_overview.return_value.get_from_id.return_value = fake_course_overview_factory(modified=None)
 
     # Request our course last published date
     course_key = course_str_factory()

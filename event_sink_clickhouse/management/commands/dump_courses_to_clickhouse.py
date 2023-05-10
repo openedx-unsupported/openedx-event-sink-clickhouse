@@ -56,8 +56,9 @@ def dump_target_courses_to_clickhouse(
 
     index = 0
     for course_key, should_be_dumped, reason in sink.fetch_target_courses(course_keys, courses_to_skip, force):
-        log.error(f"Iteration {index}")
+        log.info(f"Iteration {index}: {course_key}")
         index += 1
+
         if not should_be_dumped:
             skipped_courses.append(course_key)
             log.info(f"Course {index}: Skipping course {course_key}, reason: '{reason}'")

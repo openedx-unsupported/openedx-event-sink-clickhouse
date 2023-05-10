@@ -9,7 +9,7 @@ import django.core.management.base
 import pytest
 from django.core.management import call_command
 
-from test_utils.helpers import FakeCourse, FakeCourseOverview, course_str_factory
+from test_utils.helpers import FakeCourse, course_str_factory, fake_course_overview_factory
 
 
 @pytest.fixture
@@ -60,9 +60,8 @@ def test_dump_courses_to_clickhouse_db_options(
 
     fake_modulestore_courses = [FakeCourse(course_id)]
     mock_modulestore.return_value.get_course_summaries.return_value = fake_modulestore_courses
-    mock_get_course_overview_model.return_value.get_from_id.return_value = FakeCourseOverview(
-        modified=datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
-    )
+    fake_overview = fake_course_overview_factory(modified=datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f+00:00"))
+    mock_get_course_overview_model.return_value.get_from_id.return_value = fake_overview
 
     call_command(
         'dump_courses_to_clickhouse',
@@ -133,7 +132,7 @@ def test_dump_courses_options(
 
     fake_modulestore_courses = [FakeCourse(course_id), ]
     mock_modulestore.return_value.get_course_summaries.return_value = fake_modulestore_courses
-    mock_get_course_overview_model.return_value.get_from_id.return_value = FakeCourseOverview(
+    mock_get_course_overview_model.return_value.get_from_id.return_value = fake_course_overview_factory(
         modified=datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
     )
 
@@ -208,7 +207,9 @@ def test_multiple_courses_different_times(
 
     fake_modulestore_courses = [FakeCourse(course_id_1), FakeCourse(course_id_2), FakeCourse(course_id_3)]
     mock_modulestore.return_value.get_course_summaries.return_value = fake_modulestore_courses
-    mock_get_course_overview_model.return_value.get_from_id.return_value = FakeCourseOverview(modified=test_timestamp)
+
+    fake_overview = fake_course_overview_factory(modified=test_timestamp)
+    mock_get_course_overview_model.return_value.get_from_id.return_value = fake_overview
 
     # Each time last_dump_time is called it will get a different date so we can test
     # them all together

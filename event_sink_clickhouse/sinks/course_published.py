@@ -74,7 +74,7 @@ class CoursePublishedSink(BaseSink):
         return location.for_branch(None)
 
     @staticmethod
-    def serialize_item(item, index, detached_xblock_types, dump_id, dump_timestamp):
+    def serialize_xblock(item, index, detached_xblock_types, dump_id, dump_timestamp):
         """
         Args:
             item: an XBlock
@@ -86,14 +86,14 @@ class CoursePublishedSink(BaseSink):
             or 'problem')
 
         Schema of the destination table, as defined in tutor-contrib-oars:
-            org              String NOT NULL,
-            course_key       String NOT NULL,
-            location         String NOT NULL,
-            display_name     String NOT NULL,
+            org String NOT NULL,
+            course_key String NOT NULL,
+            location String NOT NULL,
+            display_name String NOT NULL,
             xblock_data_json String NOT NULL,
-            order            Int32 default 0,
-            edited_on        String NOT NULL,
-            dump_id          UUID NOT NULL,
+            order Int32 default 0,
+            edited_on String NOT NULL,
+            dump_id UUID NOT NULL,
             time_last_dumped String NOT NULL
         """
         course_key = item.scope_ids.usage_id.course_key
@@ -123,6 +123,55 @@ class CoursePublishedSink(BaseSink):
 
         return serialized_block
 
+    @staticmethod
+    def serialize_course_overview(overview, dump_id, time_last_dumped):
+        """
+        Return a dict representing a subset of CourseOverview fields.
+
+        Schema of the downstream table as defined in tutor-contrib-oars:
+            org String NOT NULL,
+            course_key String NOT NULL,
+            display_name String NOT NULL,
+            course_start String NOT NULL,
+            course_end String NOT NULL,
+            enrollment_start String NOT NULL,
+            enrollment_end String NOT NULL,
+            self_paced BOOL NOT NULL,
+            course_data_json String NOT NULL,
+            created String NOT NULL,
+            modified String NOT NULL
+            dump_id UUID NOT NULL,
+            time_last_dumped String NOT NULL
+        """
+        json_fields = {
+            "advertised_start": str(overview.advertised_start),
+            "announcement": str(overview.announcement),
+            "lowest_passing_grade": str(overview.lowest_passing_grade),
+            "invitation_only": overview.invitation_only,
+            "max_student_enrollments_allowed": overview.max_student_enrollments_allowed,
+            "effort": overview.effort,
+            "enable_proctored_exams": overview.enable_proctored_exams,
+            "entrance_exam_enabled": overview.entrance_exam_enabled,
+            "external_id": overview.external_id,
+            "language": overview.language,
+        }
+
+        return {
+            "org": overview.org,
+            "course_key": str(overview.id),
+            "display_name": overview.display_name,
+            "course_start": overview.start,
+            "course_end": overview.end,
+            "enrollment_start": overview.enrollment_start,
+            "enrollment_end": overview.enrollment_end,
+            "self_paced": overview.self_paced,
+            "course_data_json": json.dumps(json_fields),
+            "created": overview.created,
+            "modified": overview.modified,
+            "dump_id": dump_id,
+            "time_last_dumped": time_last_dumped
+        }
+
     def serialize_course(self, course_id):
         """
         Serializes a course into a CSV of nodes and relationships.
@@ -140,6 +189,10 @@ class CoursePublishedSink(BaseSink):
         dump_id = str(uuid.uuid4())
         dump_timestamp = str(timezone.now())
 
+        courseoverview_model = self._get_course_overview_model()
+        course_overview = courseoverview_model.get_from_id(course_id)
+        serialized_course_overview = self.serialize_course_overview(course_overview, dump_id, dump_timestamp)
+
         # Create a location to node mapping as a lookup for writing relationships later
         location_to_node = {}
         items = modulestore.get_items(course_id)
@@ -149,7 +202,7 @@ class CoursePublishedSink(BaseSink):
         index = 0
         for item in items:
             index += 1
-            fields = self.serialize_item(item, index, detached_xblock_types, dump_id, dump_timestamp)
+            fields = self.serialize_xblock(item, index, detached_xblock_types, dump_id, dump_timestamp)
             location_to_node[self.strip_branch_and_version(item.location)] = fields
 
         # Create a list of relationships between blocks, using their locations as identifiers
@@ -171,7 +224,33 @@ class CoursePublishedSink(BaseSink):
                     relationships.append(relationship)
 
         nodes = list(location_to_node.values())
-        return nodes, relationships
+        return serialized_course_overview, nodes, relationships
+
+    def _send_course_overview(self, serialized_overview):
+        """
+        Create the insert query and CSV to send the serialized CourseOverview to ClickHouse.
+
+        We still use a CSV here even though there's only 1 row because it affords handles
+        type serialization for us and keeps the pattern consistent.
+        """
+        params = CLICKHOUSE_BULK_INSERT_PARAMS.copy()
+
+        # "query" is a special param for the query, it's the best way to get the FORMAT CSV in there.
+        params["query"] = f"INSERT INTO {self.ch_database}.course_overviews FORMAT CSV"
+
+        output = io.StringIO()
+        writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
+        writer.writerow(serialized_overview.values())
+
+        request = requests.Request(
+            'POST',
+            self.ch_url,
+            data=output.getvalue(),
+            params=params,
+            auth=self.ch_auth
+        )
+
+        self._send_clickhouse_request(request, expected_insert_rows=1)
 
     def _send_xblocks(self, serialized_xblocks):
         """
@@ -196,7 +275,7 @@ class CoursePublishedSink(BaseSink):
             auth=self.ch_auth
         )
 
-        self._send_clickhouse_request(request)
+        self._send_clickhouse_request(request, expected_insert_rows=len(serialized_xblocks))
 
     def _send_relationships(self, relationships):
         """
@@ -220,13 +299,13 @@ class CoursePublishedSink(BaseSink):
             auth=self.ch_auth
         )
 
-        self._send_clickhouse_request(request)
+        self._send_clickhouse_request(request, expected_insert_rows=len(relationships))
 
     def dump(self, course_key):
         """
         Do the serialization and send to ClickHouse
         """
-        serialized_blocks, relationships = self.serialize_course(course_key)
+        serialized_courseoverview, serialized_blocks, relationships = self.serialize_course(course_key)
 
         self.log.info(
             "Now dumping %s to ClickHouse: %d serialized_blocks and %d relationships",
@@ -238,6 +317,7 @@ class CoursePublishedSink(BaseSink):
         course_string = str(course_key)
 
         try:
+            self._send_course_overview(serialized_courseoverview)
             self._send_xblocks(serialized_blocks)
             self._send_relationships(relationships)
             self.log.info("Completed dumping %s to ClickHouse", course_key)
@@ -332,7 +412,7 @@ class CoursePublishedSink(BaseSink):
 
         response = self._send_clickhouse_request(request)
         response.raise_for_status()
-        if response.text:
+        if response.text.strip():
             # ClickHouse returns timestamps in the format: "2023-05-03 15:47:39.331024+00:00"
             # Our internal comparisons use the str() of a datetime object, this handles that
             # transformation so that downstream comparisons will work.
@@ -355,8 +435,6 @@ class CoursePublishedSink(BaseSink):
         """
 
         course_last_dump_time = self.get_course_last_dump_time(course_key)
-        self.log.error(course_key)
-        self.log.error(course_last_dump_time)
 
         # If we don't have a record of the last time this command was run,
         # we should serialize the course and dump it
@@ -364,7 +442,6 @@ class CoursePublishedSink(BaseSink):
             return True, "Course is not present in ClickHouse"
 
         course_last_published_date = self.get_course_last_published(course_key)
-        self.log.error(course_last_published_date)
 
         # If we've somehow dumped this course but there is no publish date
         # skip it
