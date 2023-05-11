@@ -149,7 +149,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """
         Iterates through each course, serializes them into graphs, and saves
-        those graphs to neo4j.
+        those graphs to clickhouse.
         """
         connection_overrides = {
             key: options[key]
