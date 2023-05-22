@@ -32,7 +32,7 @@ build==0.10.0
     # via -r requirements/doc.in
 celery==5.2.7
     # via -r requirements/test.txt
-certifi==2022.12.7
+certifi==2023.5.7
     # via
     #   -r requirements/test.txt
     #   requests
@@ -280,7 +280,7 @@ sqlparse==0.4.4
     # via
     #   -r requirements/test.txt
     #   django
-stevedore==5.0.0
+stevedore==5.1.0
     # via
     #   -r requirements/test.txt
     #   code-annotations
