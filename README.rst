@@ -211,7 +211,7 @@ file in this repo.
 Reporting Security Issues
 *************************
 
-Please do not report security issues in public. Please email security@tcril.org.
+Please do not report security issues in public. Please email security@openedx.org.
 
 .. |pypi-badge| image:: https://img.shields.io/pypi/v/openedx-event-sink-clickhouse.svg
     :target: https://pypi.python.org/pypi/openedx-event-sink-clickhouse/
