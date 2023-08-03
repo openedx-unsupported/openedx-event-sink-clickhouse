@@ -201,7 +201,7 @@ def check_overview_csv_matcher(course_overview):
     def match(request):
         body = request.body
 
-        f = StringIO(body)
+        f = StringIO(body.decode("utf-8"))
         reader = csv.reader(f)
 
         i = 0
@@ -251,7 +251,7 @@ def check_block_csv_matcher(course):
     that actually does the matching.
     """
     def match(request):
-        body = request.body
+        body = request.body.decode("utf-8")
         lines = body.split("\n")[:-1]
 
         # There should be one CSV line for each block in the test course
