@@ -245,7 +245,7 @@ class CoursePublishedSink(BaseSink):
         request = requests.Request(
             'POST',
             self.ch_url,
-            data=output.getvalue(),
+            data=output.getvalue().encode("utf-8"),
             params=params,
             auth=self.ch_auth
         )
@@ -270,7 +270,7 @@ class CoursePublishedSink(BaseSink):
         request = requests.Request(
             'POST',
             self.ch_url,
-            data=output.getvalue(),
+            data=output.getvalue().encode("utf-8"),
             params=params,
             auth=self.ch_auth
         )
