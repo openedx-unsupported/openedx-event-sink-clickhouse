@@ -74,7 +74,7 @@ django-waffle==4.0.0
     # via
     #   -r requirements/base.txt
     #   edx-django-utils
-edx-django-utils==5.6.0
+edx-django-utils==5.7.0
     # via -r requirements/base.txt
 edx-opaque-keys==2.3.0
     # via -r requirements/base.txt
@@ -152,7 +152,7 @@ requests==2.31.0
     # via
     #   -r requirements/base.txt
     #   responses
-responses==0.23.2
+responses==0.23.3
     # via -r requirements/test.in
 six==1.16.0
     # via
