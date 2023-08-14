@@ -79,7 +79,7 @@ code-annotations==1.5.0
     # via
     #   -r requirements/quality.txt
     #   edx-lint
-coverage[toml]==7.2.7
+coverage[toml]==7.3.0
     # via
     #   -r requirements/quality.txt
     #   pytest-cov
@@ -115,7 +115,7 @@ edx-i18n-tools==1.1.0
     # via -r requirements/dev.in
 edx-lint==5.3.4
     # via -r requirements/quality.txt
-edx-opaque-keys==2.3.0
+edx-opaque-keys==2.4.0
     # via -r requirements/quality.txt
 exceptiongroup==1.1.2
     # via
@@ -159,7 +159,7 @@ mccabe==0.7.0
     # via
     #   -r requirements/quality.txt
     #   pylint
-newrelic==8.9.0
+newrelic==8.10.0
     # via
     #   -r requirements/quality.txt
     #   edx-django-utils
@@ -177,7 +177,7 @@ pbr==5.11.1
     # via
     #   -r requirements/quality.txt
     #   stevedore
-pip-tools==7.2.0
+pip-tools==7.3.0
     # via -r requirements/pip-tools.txt
 platformdirs==3.10.0
     # via
@@ -356,7 +356,7 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.24.2
+virtualenv==20.24.3
     # via
     #   -r requirements/ci.txt
     #   tox

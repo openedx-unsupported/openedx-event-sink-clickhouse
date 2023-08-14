@@ -73,7 +73,7 @@ click-repl==0.3.0
     #   celery
 code-annotations==1.5.0
     # via -r requirements/test.txt
-coverage[toml]==7.2.7
+coverage[toml]==7.3.0
     # via
     #   -r requirements/test.txt
     #   pytest-cov
@@ -105,7 +105,7 @@ docutils==0.19
     #   sphinx
 edx-django-utils==5.7.0
     # via -r requirements/test.txt
-edx-opaque-keys==2.3.0
+edx-opaque-keys==2.4.0
     # via -r requirements/test.txt
 exceptiongroup==1.1.2
     # via
@@ -122,7 +122,7 @@ importlib-metadata==6.8.0
     #   keyring
     #   sphinx
     #   twine
-importlib-resources==6.0.0
+importlib-resources==6.0.1
     # via keyring
 iniconfig==2.0.0
     # via
@@ -155,7 +155,7 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.1.0
     # via jaraco-classes
-newrelic==8.9.0
+newrelic==8.10.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
