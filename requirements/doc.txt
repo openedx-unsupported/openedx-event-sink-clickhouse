@@ -85,15 +85,22 @@ django==3.2.20
     #   -r requirements/test.txt
     #   django-crum
     #   django-waffle
+    #   djangorestframework
     #   edx-django-utils
 django-crum==0.7.9
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
+django-rest-framework==0.1.0
+    # via -r requirements/test.txt
 django-waffle==4.0.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
+djangorestframework==3.14.0
+    # via
+    #   -r requirements/test.txt
+    #   django-rest-framework
 doc8==1.1.1
     # via -r requirements/doc.in
 docutils==0.19
@@ -230,6 +237,7 @@ pytz==2023.3
     #   -r requirements/test.txt
     #   babel
     #   django
+    #   djangorestframework
 pyyaml==6.0.1
     # via
     #   -r requirements/test.txt

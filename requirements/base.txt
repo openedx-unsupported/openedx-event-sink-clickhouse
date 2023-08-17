@@ -41,11 +41,16 @@ django==3.2.20
     #   -r requirements/base.in
     #   django-crum
     #   django-waffle
+    #   djangorestframework
     #   edx-django-utils
 django-crum==0.7.9
     # via edx-django-utils
+django-rest-framework==0.1.0
+    # via -r requirements/base.in
 django-waffle==4.0.0
     # via edx-django-utils
+djangorestframework==3.14.0
+    # via django-rest-framework
 edx-django-utils==5.7.0
     # via -r requirements/base.in
 edx-opaque-keys==2.4.0
@@ -71,7 +76,9 @@ pynacl==1.5.0
 python-dateutil==2.8.2
     # via celery
 pytz==2023.3
-    # via django
+    # via
+    #   django
+    #   djangorestframework
 requests==2.31.0
     # via -r requirements/base.in
 six==1.16.0

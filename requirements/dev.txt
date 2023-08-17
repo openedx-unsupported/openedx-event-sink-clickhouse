@@ -99,16 +99,23 @@ django==3.2.20
     #   -r requirements/quality.txt
     #   django-crum
     #   django-waffle
+    #   djangorestframework
     #   edx-django-utils
     #   edx-i18n-tools
 django-crum==0.7.9
     # via
     #   -r requirements/quality.txt
     #   edx-django-utils
+django-rest-framework==0.1.0
+    # via -r requirements/quality.txt
 django-waffle==4.0.0
     # via
     #   -r requirements/quality.txt
     #   edx-django-utils
+djangorestframework==3.14.0
+    # via
+    #   -r requirements/quality.txt
+    #   django-rest-framework
 edx-django-utils==5.7.0
     # via -r requirements/quality.txt
 edx-i18n-tools==1.1.0
@@ -269,6 +276,7 @@ pytz==2023.3
     # via
     #   -r requirements/quality.txt
     #   django
+    #   djangorestframework
 pyyaml==6.0.1
     # via
     #   -r requirements/quality.txt
