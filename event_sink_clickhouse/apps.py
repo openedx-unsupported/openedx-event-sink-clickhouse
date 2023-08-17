@@ -48,6 +48,4 @@ class EventSinkClickhouseConfig(AppConfig):
         """
         super().ready()
 
-        from event_sink_clickhouse import signals, sinks
-
-        from . import tasks  # pylint: disable=import-outside-toplevel, unused-import
+        from event_sink_clickhouse import signals, sinks, tasks # pylint: disable=import-outside-toplevel, unused-import
