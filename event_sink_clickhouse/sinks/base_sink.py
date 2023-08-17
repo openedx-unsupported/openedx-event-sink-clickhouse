@@ -12,7 +12,7 @@ import requests
 from django.conf import settings
 from django.utils import timezone
 
-from event_sink_clickhouse.sinks.utils import get_model
+from event_sink_clickhouse.utils import get_model
 
 ClickHouseAuth = namedtuple("ClickHouseAuth", ["username", "password"])
 
@@ -83,7 +83,6 @@ class ModelBaseSink(BaseSink):
     This class is used for the model based event sink, which uses the Django ORM to write
     events to ClickHouse.
     """
-    fields = None
     unique_key = None
     clickhouse_table_name = None
     queryset = None
@@ -97,16 +96,14 @@ class ModelBaseSink(BaseSink):
 
         required_fields = [
             self.model,
-            self.fields,
             self.clickhouse_table_name,
             self.timestamp_field,
             self.unique_key,
             self.name,
-            self.serializer_class,
         ]
 
         if not all(required_fields):
-            raise NotImplementedError("ModelBaseSink needs to be subclassed with model, fields, clickhouse_table_name, timestamp_field, unique_key, name, and serializer_class")
+            raise NotImplementedError("ModelBaseSink needs to be subclassed with model, clickhouse_table_name, timestamp_field, unique_key, and name")
 
     def get_model(self):
         """
@@ -119,18 +116,6 @@ class ModelBaseSink(BaseSink):
         Return the queryset to be used for the insert
         """
         return self.get_model().objects.all()
-
-    def get_fields(self):
-        """
-        Return the fields to be used for the insert
-        """
-        return self.fields
-
-    def fetch_model_data(self):
-        """
-        Fetch the data from the model queryset
-        """
-        return self.get_queryset().values(*self.get_fields())
 
     def dump(self, item_id):
         """
@@ -156,14 +141,15 @@ class ModelBaseSink(BaseSink):
         """
         Serialize the data to be sent to ClickHouse
         """
-        serializer = self.get_serializer()
-        return serializer.serialize(item)
+        Serializer = self.get_serializer()
+        serializer = Serializer(item)
+        return serializer.data
 
     def get_serializer(self):
         """
         Return the serializer to be used for the insert
         """
-        return self.serializer_class()
+        return self.serializer_class
 
     def send_item(self, serialized_item):
         """
@@ -190,6 +176,32 @@ class ModelBaseSink(BaseSink):
         )
 
         self._send_clickhouse_request(request, expected_insert_rows=1)
+
+    def fetch_target_items(self, ids=None, skip_ids=None, force_dump=False):
+        """
+        Fetch the items that should be dumped to ClickHouse
+        """
+        if ids:
+            item_keys = [self.convert_id(id) for ids in ids]
+        else:
+            item_keys = [
+                item.id for item in self.get_queryset()
+            ]
+
+        for item_key in item_keys:
+            if item_key in skip_ids:
+                yield item_key, False, f"{self.name} is explicitly skipped"
+            elif force_dump:
+                yield item_key, True, "Force is set"
+            else:
+                should_be_dumped, reason = self.should_dump_item(item_key)
+                yield item_key, should_be_dumped, reason
+
+    def should_dump_item(self, unique_key):
+        """
+        Return True if the item should be dumped to ClickHouse, False otherwise
+        """
+        return True
 
 
     def get_last_dumped_timestamp(self, item_id):
@@ -220,32 +232,17 @@ class ModelBaseSink(BaseSink):
         # Item has never been dumped, return None
         return None
 
+    def get_fields(self):
+        """
+        Return the fields to be used for the insert
+        """
+        return self.fields
 
-    def should_dump_item(self, unique_key):
+    def fetch_model_data(self):
         """
-        Return True if the item should be dumped to ClickHouse, False otherwise
+        Fetch the data from the model queryset
         """
-        return True
-
-    def fetch_target_items(self, ids=None, skip_ids=None, force_dump=False):
-        """
-        Fetch the items that should be dumped to ClickHouse
-        """
-        if ids:
-            item_keys = [self.convert_id(id) for ids in ids]
-        else:
-            item_keys = [
-                item.id for item in self.get_queryset()
-            ]
-
-        for item_key in item_keys:
-            if item_key in skip_ids:
-                yield item_key, False, f"{self.name} is explicitly skipped"
-            elif force_dump:
-                yield item_key, True, "Force is set"
-            else:
-                should_be_dumped, reason = self.should_dump_item(item_key)
-                yield item_key, should_be_dumped, reason
+        return self.get_queryset().values(*self.get_fields())
 
 
 class ItemSerializer:

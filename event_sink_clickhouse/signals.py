@@ -1,7 +1,7 @@
 """
 Signal handler functions, mapped to specific signals in apps.py.
 """
-from event_sink_clickhouse.sinks.utils import get_model
+from event_sink_clickhouse.utils import get_model
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
