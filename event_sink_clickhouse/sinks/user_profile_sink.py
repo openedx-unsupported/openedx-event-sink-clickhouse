@@ -1,3 +1,4 @@
+"""User profile sink"""
 from event_sink_clickhouse.serializers import UserProfileSerializer
 from event_sink_clickhouse.sinks.base_sink import ModelBaseSink
 

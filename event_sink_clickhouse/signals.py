@@ -7,9 +7,9 @@ from django.dispatch import receiver
 from event_sink_clickhouse.utils import get_model
 
 
-def receive_course_publish(
+def receive_course_publish(  # pylint: disable=unused-argument  # pragma: no cover
     sender, course_key, **kwargs
-):  # pylint: disable=unused-argument  # pragma: no cover
+):
     """
     Receives COURSE_PUBLISHED signal and queues the dump job.
     """
@@ -20,9 +20,9 @@ def receive_course_publish(
 
 
 @receiver(post_save, sender=get_model("user_profile"))
-def on_user_profile_updated(
+def on_user_profile_updated(  # pylint: disable=unused-argument  # pragma: no cover
     sender, instance, **kwargs
-):  # pylint: disable=unused-argument  # pragma: no cover
+):
     """
     Receives post save signal and queues the dump job.
     """

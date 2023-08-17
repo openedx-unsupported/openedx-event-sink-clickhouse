@@ -5,12 +5,10 @@ import csv
 import datetime
 import io
 import json
-import uuid
 from collections import namedtuple
 
 import requests
 from django.conf import settings
-from django.utils import timezone
 
 from event_sink_clickhouse.utils import get_model
 
@@ -114,7 +112,8 @@ class ModelBaseSink(BaseSink):
 
         if not all(required_fields):
             raise NotImplementedError(
-                "ModelBaseSink needs to be subclassed with model, clickhouse_table_name, timestamp_field, unique_key, and name"
+                "ModelBaseSink needs to be subclassed with model, clickhouse_table_name,"
+                "timestamp_field, unique_key, and name"
             )
 
     def get_model(self):
@@ -154,7 +153,7 @@ class ModelBaseSink(BaseSink):
         Serialize the data to be sent to ClickHouse
         """
         Serializer = self.get_serializer()
-        serializer = Serializer(item)
+        serializer = Serializer(item)  # pylint: disable=not-callable
         return serializer.data
 
     def get_serializer(self):
@@ -209,11 +208,11 @@ class ModelBaseSink(BaseSink):
                 should_be_dumped, reason = self.should_dump_item(item_key)
                 yield item_key, should_be_dumped, reason
 
-    def should_dump_item(self, unique_key):
+    def should_dump_item(self, unique_key):  # pylint: disable=unused-argument
         """
         Return True if the item should be dumped to ClickHouse, False otherwise
         """
-        return True
+        return True, "No reason"
 
     def get_last_dumped_timestamp(self, item_id):
         """
