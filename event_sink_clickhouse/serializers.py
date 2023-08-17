@@ -1,7 +1,7 @@
-from rest_framework import serializers
-
 import uuid
+
 from django.utils import timezone
+from rest_framework import serializers
 
 from event_sink_clickhouse.utils import get_model
 

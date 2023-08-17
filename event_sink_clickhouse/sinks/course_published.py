@@ -33,6 +33,7 @@ class CoursePublishedSink(BaseSink):
     """
     Event sink for the COURSE_PUBLISHED signal
     """
+
     @staticmethod
     def _get_detached_xblock_types():  # pragma: no cover
         """
@@ -41,6 +42,7 @@ class CoursePublishedSink(BaseSink):
         """
         # pylint: disable=import-outside-toplevel,import-error
         from xmodule.modulestore.store_utilities import DETACHED_XBLOCK_TYPES
+
         return DETACHED_XBLOCK_TYPES
 
     @staticmethod
@@ -51,6 +53,7 @@ class CoursePublishedSink(BaseSink):
         """
         # pylint: disable=import-outside-toplevel,import-error
         from xmodule.modulestore.django import modulestore
+
         return modulestore()
 
     @staticmethod
@@ -61,6 +64,7 @@ class CoursePublishedSink(BaseSink):
         """
         # pylint: disable=import-outside-toplevel,import-error
         from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
+
         return CourseOverview
 
     @staticmethod
@@ -111,15 +115,15 @@ class CoursePublishedSink(BaseSink):
 
         # Core table data, if things change here it's a big deal.
         serialized_block = {
-            'org': course_key.org,
-            'course_key': str(course_key),
-            'location': str(item.location),
-            'display_name': item.display_name_with_default.replace("'", "\'"),
-            'xblock_data_json': json.dumps(json_data),
-            'order': index,
-            'edited_on': str(getattr(item, 'edited_on', '')),
-            'dump_id': dump_id,
-            'time_last_dumped': dump_timestamp,
+            "org": course_key.org,
+            "course_key": str(course_key),
+            "location": str(item.location),
+            "display_name": item.display_name_with_default.replace("'", "'"),
+            "xblock_data_json": json.dumps(json_data),
+            "order": index,
+            "edited_on": str(getattr(item, "edited_on", "")),
+            "dump_id": dump_id,
+            "time_last_dumped": dump_timestamp,
         }
 
         return serialized_block
@@ -170,7 +174,7 @@ class CoursePublishedSink(BaseSink):
             "created": overview.created,
             "modified": overview.modified,
             "dump_id": dump_id,
-            "time_last_dumped": time_last_dumped
+            "time_last_dumped": time_last_dumped,
         }
 
     def serialize_course(self, course_id):
@@ -192,7 +196,9 @@ class CoursePublishedSink(BaseSink):
 
         courseoverview_model = self._get_course_overview_model()
         course_overview = courseoverview_model.get_from_id(course_id)
-        serialized_course_overview = self.serialize_course_overview(course_overview, dump_id, dump_timestamp)
+        serialized_course_overview = self.serialize_course_overview(
+            course_overview, dump_id, dump_timestamp
+        )
 
         # Create a location to node mapping as a lookup for writing relationships later
         location_to_node = {}
@@ -203,24 +209,30 @@ class CoursePublishedSink(BaseSink):
         index = 0
         for item in items:
             index += 1
-            fields = self.serialize_xblock(item, index, detached_xblock_types, dump_id, dump_timestamp)
+            fields = self.serialize_xblock(
+                item, index, detached_xblock_types, dump_id, dump_timestamp
+            )
             location_to_node[self.strip_branch_and_version(item.location)] = fields
 
         # Create a list of relationships between blocks, using their locations as identifiers
         relationships = []
         for item in items:
             for index, child in enumerate(item.get_children()):
-                parent_node = location_to_node.get(self.strip_branch_and_version(item.location))
-                child_node = location_to_node.get(self.strip_branch_and_version(child.location))
+                parent_node = location_to_node.get(
+                    self.strip_branch_and_version(item.location)
+                )
+                child_node = location_to_node.get(
+                    self.strip_branch_and_version(child.location)
+                )
 
                 if parent_node is not None and child_node is not None:
                     relationship = {
-                        'course_key': str(course_id),
-                        'parent_location': str(parent_node["location"]),
-                        'child_location': str(child_node["location"]),
-                        'order': index,
-                        'dump_id': dump_id,
-                        'time_last_dumped': dump_timestamp,
+                        "course_key": str(course_id),
+                        "parent_location": str(parent_node["location"]),
+                        "child_location": str(child_node["location"]),
+                        "order": index,
+                        "dump_id": dump_id,
+                        "time_last_dumped": dump_timestamp,
                     }
                     relationships.append(relationship)
 
@@ -244,11 +256,11 @@ class CoursePublishedSink(BaseSink):
         writer.writerow(serialized_overview.values())
 
         request = requests.Request(
-            'POST',
+            "POST",
             self.ch_url,
             data=output.getvalue().encode("utf-8"),
             params=params,
-            auth=self.ch_auth
+            auth=self.ch_auth,
         )
 
         self._send_clickhouse_request(request, expected_insert_rows=1)
@@ -269,14 +281,16 @@ class CoursePublishedSink(BaseSink):
             writer.writerow(node.values())
 
         request = requests.Request(
-            'POST',
+            "POST",
             self.ch_url,
             data=output.getvalue().encode("utf-8"),
             params=params,
-            auth=self.ch_auth
+            auth=self.ch_auth,
         )
 
-        self._send_clickhouse_request(request, expected_insert_rows=len(serialized_xblocks))
+        self._send_clickhouse_request(
+            request, expected_insert_rows=len(serialized_xblocks)
+        )
 
     def _send_relationships(self, relationships):
         """
@@ -285,7 +299,9 @@ class CoursePublishedSink(BaseSink):
         params = CLICKHOUSE_BULK_INSERT_PARAMS.copy()
 
         # "query" is a special param for the query, it's the best way to get the FORMAT CSV in there.
-        params["query"] = f"INSERT INTO {self.ch_database}.course_relationships FORMAT CSV"
+        params[
+            "query"
+        ] = f"INSERT INTO {self.ch_database}.course_relationships FORMAT CSV"
         output = io.StringIO()
         writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
 
@@ -293,11 +309,11 @@ class CoursePublishedSink(BaseSink):
             writer.writerow(relationship.values())
 
         request = requests.Request(
-            'POST',
+            "POST",
             self.ch_url,
             data=output.getvalue(),
             params=params,
-            auth=self.ch_auth
+            auth=self.ch_auth,
         )
 
         self._send_clickhouse_request(request, expected_insert_rows=len(relationships))
@@ -306,7 +322,11 @@ class CoursePublishedSink(BaseSink):
         """
         Do the serialization and send to ClickHouse
         """
-        serialized_courseoverview, serialized_blocks, relationships = self.serialize_course(course_key)
+        (
+            serialized_courseoverview,
+            serialized_blocks,
+            relationships,
+        ) = self.serialize_course(course_key)
 
         self.log.info(
             "Now dumping %s to ClickHouse: %d serialized_blocks and %d relationships",
@@ -324,8 +344,7 @@ class CoursePublishedSink(BaseSink):
             self.log.info("Completed dumping %s to ClickHouse", course_key)
         except Exception:
             self.log.exception(
-                "Error trying to dump course %s to ClickHouse!",
-                course_string
+                "Error trying to dump course %s to ClickHouse!", course_string
             )
             raise
 
@@ -375,9 +394,7 @@ class CoursePublishedSink(BaseSink):
         if courses:
             course_keys = [CourseKey.from_string(course) for course in courses]
         else:
-            course_keys = [
-                course.id for course in modulestore.get_course_summaries()
-            ]
+            course_keys = [course.id for course in modulestore.get_course_summaries()]
 
         for course_key in course_keys:
             if course_key in skipped_courses:
@@ -400,16 +417,11 @@ class CoursePublishedSink(BaseSink):
         """
         params = {
             "query": f"SELECT max(time_last_dumped) as time_last_dumped "
-                     f"FROM {self.ch_database}.course_blocks "
-                     f"WHERE course_key = '{course_key}'"
+            f"FROM {self.ch_database}.course_blocks "
+            f"WHERE course_key = '{course_key}'"
         }
 
-        request = requests.Request(
-            'GET',
-            self.ch_url,
-            params=params,
-            auth=self.ch_auth
-        )
+        request = requests.Request("GET", self.ch_url, params=params, auth=self.ch_auth)
 
         response = self._send_clickhouse_request(request)
         response.raise_for_status()
@@ -450,10 +462,11 @@ class CoursePublishedSink(BaseSink):
             return False, "No last modified date in CourseOverview"
 
         # Otherwise, dump it if it is newer
-        course_last_dump_time = datetime.datetime.strptime(course_last_dump_time, "%Y-%m-%d %H:%M:%S.%f+00:00")
+        course_last_dump_time = datetime.datetime.strptime(
+            course_last_dump_time, "%Y-%m-%d %H:%M:%S.%f+00:00"
+        )
         course_last_published_date = datetime.datetime.strptime(
-            course_last_published_date,
-            "%Y-%m-%d %H:%M:%S.%f+00:00"
+            course_last_published_date, "%Y-%m-%d %H:%M:%S.%f+00:00"
         )
         needs_dump = course_last_dump_time < course_last_published_date
 

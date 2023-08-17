@@ -12,7 +12,7 @@ from event_sink_clickhouse.sinks.course_published import CoursePublishedSink
 from event_sink_clickhouse.sinks.user_profile_sink import UserProfileSink
 
 log = logging.getLogger(__name__)
-celery_log = logging.getLogger('edx.celery.task')
+celery_log = logging.getLogger("edx.celery.task")
 
 
 @shared_task
@@ -27,7 +27,9 @@ def dump_course_to_clickhouse(course_key_string, connection_overrides=None):
             parameters specified in `settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG`.
     """
     course_key = CourseKey.from_string(course_key_string)
-    sink = CoursePublishedSink(connection_overrides=connection_overrides, log=celery_log)
+    sink = CoursePublishedSink(
+        connection_overrides=connection_overrides, log=celery_log
+    )
     sink.dump(course_key)
 
 

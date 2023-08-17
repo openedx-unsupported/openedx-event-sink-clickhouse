@@ -26,21 +26,30 @@ class BaseSink:
         "input_format_allow_errors_num": 1,
         "input_format_allow_errors_ratio": 0.1,
     }
+
     def __init__(self, connection_overrides, log):
         self.log = log
         self.ch_url = settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG["url"]
-        self.ch_auth = ClickHouseAuth(settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG["username"],
-                                      settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG["password"])
+        self.ch_auth = ClickHouseAuth(
+            settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG["username"],
+            settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG["password"],
+        )
         self.ch_database = settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG["database"]
-        self.ch_timeout_secs = settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG["timeout_secs"]
+        self.ch_timeout_secs = settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG[
+            "timeout_secs"
+        ]
 
         # If any overrides to the ClickHouse connection
         if connection_overrides:
             self.ch_url = connection_overrides.get("url", self.ch_url)
-            self.ch_auth = ClickHouseAuth(connection_overrides.get("username", self.ch_auth.username),
-                                          connection_overrides.get("password", self.ch_auth.password))
+            self.ch_auth = ClickHouseAuth(
+                connection_overrides.get("username", self.ch_auth.username),
+                connection_overrides.get("password", self.ch_auth.password),
+            )
             self.ch_database = connection_overrides.get("database", self.ch_database)
-            self.ch_timeout_secs = connection_overrides.get("timeout_secs", self.ch_timeout_secs)
+            self.ch_timeout_secs = connection_overrides.get(
+                "timeout_secs", self.ch_timeout_secs
+            )
 
     def _send_clickhouse_request(self, request, expected_insert_rows=None):
         """
@@ -83,6 +92,7 @@ class ModelBaseSink(BaseSink):
     This class is used for the model based event sink, which uses the Django ORM to write
     events to ClickHouse.
     """
+
     unique_key = None
     clickhouse_table_name = None
     queryset = None
@@ -103,7 +113,9 @@ class ModelBaseSink(BaseSink):
         ]
 
         if not all(required_fields):
-            raise NotImplementedError("ModelBaseSink needs to be subclassed with model, clickhouse_table_name, timestamp_field, unique_key, and name")
+            raise NotImplementedError(
+                "ModelBaseSink needs to be subclassed with model, clickhouse_table_name, timestamp_field, unique_key, and name"
+            )
 
     def get_model(self):
         """
@@ -161,18 +173,20 @@ class ModelBaseSink(BaseSink):
         params = self.CLICKHOUSE_BULK_INSERT_PARAMS.copy()
 
         # "query" is a special param for the query, it's the best way to get the FORMAT CSV in there.
-        params["query"] = f"INSERT INTO {self.ch_database}.{self.clickhouse_table_name} FORMAT CSV"
+        params[
+            "query"
+        ] = f"INSERT INTO {self.ch_database}.{self.clickhouse_table_name} FORMAT CSV"
 
         output = io.StringIO()
         writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
         writer.writerow(serialized_item.values())
 
         request = requests.Request(
-            'POST',
+            "POST",
             self.ch_url,
             data=output.getvalue().encode("utf-8"),
             params=params,
-            auth=self.ch_auth
+            auth=self.ch_auth,
         )
 
         self._send_clickhouse_request(request, expected_insert_rows=1)
@@ -184,9 +198,7 @@ class ModelBaseSink(BaseSink):
         if ids:
             item_keys = [self.convert_id(id) for ids in ids]
         else:
-            item_keys = [
-                item.id for item in self.get_queryset()
-            ]
+            item_keys = [item.id for item in self.get_queryset()]
 
         for item_key in item_keys:
             if item_key in skip_ids:
@@ -203,23 +215,17 @@ class ModelBaseSink(BaseSink):
         """
         return True
 
-
     def get_last_dumped_timestamp(self, item_id):
         """
         Return the last timestamp that was dumped to ClickHouse
         """
         params = {
             "query": f"SELECT max({self.timestamp_field}) as time_last_dumped "
-                     f"FROM {self.ch_database}.{self.clickhouse_table_name} "
-                     f"WHERE {self.unique_key} = '{item_id}'"
+            f"FROM {self.ch_database}.{self.clickhouse_table_name} "
+            f"WHERE {self.unique_key} = '{item_id}'"
         }
 
-        request = requests.Request(
-            'GET',
-            self.ch_url,
-            params=params,
-            auth=self.ch_auth
-        )
+        request = requests.Request("GET", self.ch_url, params=params, auth=self.ch_auth)
 
         response = self._send_clickhouse_request(request)
         response.raise_for_status()
@@ -243,28 +249,3 @@ class ModelBaseSink(BaseSink):
         Fetch the data from the model queryset
         """
         return self.get_queryset().values(*self.get_fields())
-
-
-class ItemSerializer:
-
-    def base_serializer(self):
-        """
-        Return the base fields for the serializer
-        """
-        return {
-            'dump_id': str(uuid.uuid4()),
-            'dump_timestamp': str(timezone.now())
-        }
-
-    def serialize(self, item):
-        """
-        Serialize the item to be sent to ClickHouse
-        """
-        serialized_item = {**self.serialize_item(item), **self.base_serializer()}
-        return serialized_item
-
-    def serialize_item(self, item):
-        """
-        Serialize the item to be sent to ClickHouse
-        """
-        raise NotImplementedError("ItemSerializer needs to be subclassed with serialize_item")

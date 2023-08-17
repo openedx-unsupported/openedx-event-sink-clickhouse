@@ -36,7 +36,7 @@ def dump_target_courses_to_clickhouse(
     course_keys=None,
     courses_to_skip=None,
     force=None,
-    limit=None
+    limit=None,
 ):
     """
     Iterates through a list of courses in a modulestore, serializes them to csv,
@@ -55,13 +55,17 @@ def dump_target_courses_to_clickhouse(
     skipped_courses = []
 
     index = 0
-    for course_key, should_be_dumped, reason in sink.fetch_target_courses(course_keys, courses_to_skip, force):
+    for course_key, should_be_dumped, reason in sink.fetch_target_courses(
+        course_keys, courses_to_skip, force
+    ):
         log.info(f"Iteration {index}: {course_key}")
         index += 1
 
         if not should_be_dumped:
             skipped_courses.append(course_key)
-            log.info(f"Course {index}: Skipping course {course_key}, reason: '{reason}'")
+            log.info(
+                f"Course {index}: Skipping course {course_key}, reason: '{reason}'"
+            )
         else:
             # RequestCache is a local memory cache used in modulestore for performance reasons.
             # Normally it is cleared at the end of every request, but in this command it will
@@ -83,7 +87,9 @@ def dump_target_courses_to_clickhouse(
             submitted_courses.append(str(course_key))
 
             if limit and len(submitted_courses) == limit:
-                log.info(f"Limit of {limit} eligible course has been reached, quitting!")
+                log.info(
+                    f"Limit of {limit} eligible course has been reached, quitting!"
+                )
                 break
 
     return submitted_courses, skipped_courses
@@ -93,55 +99,56 @@ class Command(BaseCommand):
     """
     Dump course block and relationship data to a ClickHouse instance.
     """
+
     help = dedent(__doc__).strip()
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--url',
+            "--url",
             type=str,
             help="the URL of the ClickHouse server",
         )
         parser.add_argument(
-            '--username',
+            "--username",
             type=str,
             help="the username of the ClickHouse user",
         )
         parser.add_argument(
-            '--password',
+            "--password",
             type=str,
             help="the password of the ClickHouse user",
         )
         parser.add_argument(
-            '--database',
+            "--database",
             type=str,
             help="the database in ClickHouse to connect to",
         )
         parser.add_argument(
-            '--timeout_secs',
+            "--timeout_secs",
             type=int,
             help="timeout for ClickHouse requests, in seconds",
         )
         parser.add_argument(
-            '--courses',
-            metavar='KEY',
+            "--courses",
+            metavar="KEY",
             type=str,
-            nargs='*',
+            nargs="*",
             help="keys of courses to serialize; if omitted all courses in system are serialized",
         )
         parser.add_argument(
-            '--courses_to_skip',
-            metavar='KEY',
+            "--courses_to_skip",
+            metavar="KEY",
             type=str,
-            nargs='*',
+            nargs="*",
             help="keys of courses to NOT to serialize",
         )
         parser.add_argument(
-            '--force',
-            action='store_true',
+            "--force",
+            action="store_true",
             help="dump all courses regardless of when they were last published",
         )
         parser.add_argument(
-            '--limit',
+            "--limit",
             type=int,
             help="maximum number of courses to dump, cannot be used with '--courses' or '--force'",
         )
@@ -158,7 +165,9 @@ class Command(BaseCommand):
         }
 
         courses = options["courses"] if options["courses"] else []
-        courses_to_skip = options["courses_to_skip"] if options["courses_to_skip"] else []
+        courses_to_skip = (
+            options["courses_to_skip"] if options["courses_to_skip"] else []
+        )
 
         if options["limit"] is not None and int(options["limit"]) < 1:
             message = "'limit' must be greater than 0!"
@@ -166,8 +175,10 @@ class Command(BaseCommand):
             raise CommandError(message)
 
         if options["limit"] and options["force"]:
-            message = "The 'limit' option cannot be used with 'force' as running the " \
-                      "command repeatedly will result in the same courses being dumped every time."
+            message = (
+                "The 'limit' option cannot be used with 'force' as running the "
+                "command repeatedly will result in the same courses being dumped every time."
+            )
             log.error(message)
             raise CommandError(message)
 
@@ -175,8 +186,8 @@ class Command(BaseCommand):
             connection_overrides,
             [course_key.strip() for course_key in courses],
             [course_key.strip() for course_key in courses_to_skip],
-            options['force'],
-            options['limit']
+            options["force"],
+            options["limit"],
         )
 
         log.info(
@@ -189,6 +200,6 @@ class Command(BaseCommand):
             log.info("No courses submitted for export to ClickHouse at all!")
         else:
             log.info(  # pylint: disable=logging-not-lazy
-                "These courses were submitted for dump to ClickHouse successfully:\n\t" +
-                "\n\t".join(submitted_courses)
+                "These courses were submitted for dump to ClickHouse successfully:\n\t"
+                + "\n\t".join(submitted_courses)
             )
