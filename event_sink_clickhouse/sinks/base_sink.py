@@ -92,27 +92,54 @@ class ModelBaseSink(BaseSink):
 
     This class is used for the model based event sink, which uses the Django ORM to write
     events to ClickHouse.
-
-    Attributes:
-        unique_key (str): The unique key for the model.
-        clickhouse_table_name (str): The name of the ClickHouse table to write to.
-        queryset (QuerySet): The Django ORM queryset to use for the insert.
-        name (str): A nice name for logging.
-        timestamp_field (str): The name of the timestamp field for the model.
-        serializer_class (Serializer): The serializer class to use for the insert.
-        model (str): The name of the model in EVENT_SINK_CLICKHOUSE_MODEL_CONFIG.
-        nested_sinks (list): A list of nested sinks to use for subsequent sinks.
     """
 
     unique_key = None
+    """
+    str: A unique identifier key used to distinguish between different instances of the sink.
+    It can be used to specify the uniqueness constraint when writing events to ClickHouse.
+    """
+
     clickhouse_table_name = None
+    """
+    str: The name of the ClickHouse table where the events will be written.
+    This should be set to the desired table name for the specific event type.
+    """
+
     queryset = None
+    """
+    QuerySet: A Django QuerySet that represents the initial set of data to be processed by the sink.
+    It can be used to filter and select specific data for writing to ClickHouse.
+    """
+
     name = None
+    """
+    str: A human-readable name for the sink instance. This can be used for logging and identification purposes.
+    """
+
     timestamp_field = None
+    """
+    str: The name of the field in the model representing the timestamp of the event.
+    It is used to extract the timestamp from the event data for writing to ClickHouse.
+    """
+
     serializer_class = None
+    """
+    Serializer: The serializer class responsible for converting event data into a format suitable for storage.
+    This serializer should be compatible with Django's serialization framework.
+    """
+
     model = None
+    """
+    Model: The Django model class representing the structure of the event data.
+    This is used to validate and organize the data before writing it to ClickHouse.
+    """
+
     nested_sinks = []
-    _nested_sinks = []
+    """
+    list: A list of nested sink instances that can be used to further process or route the event data.
+    Nested sinks allow chaining multiple sinks together for more complex event processing pipelines.
+    """
 
     def __init__(self, connection_overrides, log):
         super().__init__(connection_overrides, log)
