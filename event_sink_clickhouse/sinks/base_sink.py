@@ -120,7 +120,7 @@ class ModelBaseSink(BaseSink):
         """
         Return the model to be used for the insert
         """
-        return get_model("user_profile")
+        return get_model(self.model)
 
     def get_queryset(self):
         """

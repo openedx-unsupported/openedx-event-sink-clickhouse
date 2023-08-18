@@ -29,3 +29,10 @@ DATABASES = {
 INSTALLED_APPS = (
     "event_sink_clickhouse",
 )
+
+EVENT_SINK_CLICKHOUSE_MODEL_CONFIG = {
+    "user_profile": {
+        "module": "common.djangoapps.student.models",
+        "model": "UserProfile",
+    }
+}
