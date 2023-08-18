@@ -45,5 +45,7 @@ def dump_user_profile_to_clickhouse(user_profile_id, connection_overrides=None):
             parameters specified in `settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG`.
     """
     if UserProfileSink.is_enabled():
-        sink = UserProfileSink(connection_overrides=connection_overrides, log=celery_log)
+        sink = UserProfileSink(
+            connection_overrides=connection_overrides, log=celery_log
+        )
         sink.dump(user_profile_id)

@@ -1,12 +1,11 @@
 """Utility functions for event_sink_clickhouse."""
+import logging
 from importlib import import_module
 
 from django.conf import settings
 
-
-import logging
-
 log = logging.getLogger(__name__)
+
 
 def get_model(model_setting):
     """Load a model from a setting."""

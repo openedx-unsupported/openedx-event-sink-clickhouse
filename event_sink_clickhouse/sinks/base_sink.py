@@ -9,11 +9,10 @@ from collections import namedtuple
 
 import requests
 from django.conf import settings
+from edx_toggles.toggles import WaffleFlag
 
 from event_sink_clickhouse.utils import get_model
 from event_sink_clickhouse.waffle import WAFFLE_FLAG_NAMESPACE
-
-from edx_toggles.toggles import WaffleFlag
 
 ClickHouseAuth = namedtuple("ClickHouseAuth", ["username", "password"])
 
@@ -118,8 +117,6 @@ class ModelBaseSink(BaseSink):
                 "ModelBaseSink needs to be subclassed with model, clickhouse_table_name,"
                 "timestamp_field, unique_key, and name"
             )
-
-
 
     def get_model(self):
         """
@@ -259,8 +256,17 @@ class ModelBaseSink(BaseSink):
         """
         Return True if the sink is enabled, False otherwise
         """
-        enabled = getattr(settings, f"{WAFFLE_FLAG_NAMESPACE.upper()}_{cls.model.upper()}_ENABLED", False)
-
+        enabled = getattr(
+            settings,
+            f"{WAFFLE_FLAG_NAMESPACE.upper()}_{cls.model.upper()}_ENABLED",
+            False,
+        )
+        # .. toggle_name: event_sink_clickhouse.model.enabled
+        # .. toggle_implementation: WaffleFlag
+        # .. toggle_default: False
+        # .. toggle_description: Waffle flag to enable sink
+        # .. toggle_use_cases: open_edx
+        # .. toggle_creation_date: 2022-08-17
         waffle_flag = WaffleFlag(
             f"{WAFFLE_FLAG_NAMESPACE}.{cls.model}.enabled",
             __name__,
