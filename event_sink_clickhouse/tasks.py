@@ -27,9 +27,7 @@ def dump_course_to_clickhouse(course_key_string, connection_overrides=None):
             parameters specified in `settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG`.
     """
     course_key = CourseKey.from_string(course_key_string)
-    sink = CourseOverviewSink(
-        connection_overrides=connection_overrides, log=celery_log
-    )
+    sink = CourseOverviewSink(connection_overrides=connection_overrides, log=celery_log)
     sink.dump(course_key)
 
 

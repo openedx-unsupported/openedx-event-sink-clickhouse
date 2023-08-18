@@ -14,9 +14,7 @@ def receive_course_publish(  # pylint: disable=unused-argument  # pragma: no cov
     Receives COURSE_PUBLISHED signal and queues the dump job.
     """
     # import here, because signal is registered at startup, but items in tasks are not yet able to be loaded
-    from event_sink_clickhouse.tasks import (
-        dump_course_to_clickhouse,
-    )  # pylint: disable=import-outside-toplevel
+    from event_sink_clickhouse.tasks import dump_course_to_clickhouse  # pylint: disable=import-outside-toplevel
 
     dump_course_to_clickhouse.delay(str(course_key))
 
@@ -29,8 +27,6 @@ def on_user_profile_updated(  # pylint: disable=unused-argument  # pragma: no co
     Receives post save signal and queues the dump job.
     """
     # import here, because signal is registered at startup, but items in tasks are not yet able to be loaded
-    from event_sink_clickhouse.tasks import (
-        dump_user_profile_to_clickhouse,
-    )  # pylint: disable=import-outside-toplevel
+    from event_sink_clickhouse.tasks import dump_user_profile_to_clickhouse  # pylint: disable=import-outside-toplevel
 
     dump_user_profile_to_clickhouse.delay(instance.id)

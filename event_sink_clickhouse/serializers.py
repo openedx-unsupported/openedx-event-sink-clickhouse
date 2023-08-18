@@ -1,4 +1,5 @@
 """Django serializers for the event_sink_clickhouse app."""
+import json
 import uuid
 
 from django.utils import timezone
@@ -6,7 +7,6 @@ from rest_framework import serializers
 
 from event_sink_clickhouse.utils import get_model
 
-import json
 
 class BaseSinkSerializer(serializers.Serializer):  # pylint: disable=abstract-method
     """Base sink serializer for ClickHouse."""
@@ -63,6 +63,7 @@ class UserProfileSerializer(BaseSinkSerializer, serializers.ModelSerializer):
 
 class CourseOverviewSerializer(BaseSinkSerializer, serializers.ModelSerializer):
     """Serializer for course overview events."""
+
     course_data_json = serializers.SerializerMethodField()
     course_key = serializers.SerializerMethodField()
     course_start = serializers.CharField(source="start")
@@ -109,8 +110,9 @@ class CourseOverviewSerializer(BaseSinkSerializer, serializers.ModelSerializer):
         return str(overview.id)
 
 
-class CourseBlockSerializer(BaseSinkSerializer):
+class CourseBlockSerializer(BaseSinkSerializer):  # pylint: disable=abstract-method
     """Serializer for course block model."""
+
     org = serializers.CharField()
     course_key = serializers.SerializerMethodField()
     location = serializers.SerializerMethodField()
@@ -120,6 +122,8 @@ class CourseBlockSerializer(BaseSinkSerializer):
     edited_on = serializers.CharField()
 
     class Meta:
+        """Meta class for course block serializer."""
+
         fields = [
             "org",
             "course_key",
@@ -145,15 +149,19 @@ class CourseBlockSerializer(BaseSinkSerializer):
         return str(block.display_name)
 
 
-
-class XBlockRelationshipSerializer(BaseSinkSerializer):
+class XBlockRelationshipSerializer(
+    BaseSinkSerializer
+):  # pylint: disable=abstract-method
     """Serializer for the XBlockRelationship model."""
+
     course_key = serializers.CharField()
     parent_location = serializers.CharField()
     child_location = serializers.CharField()
     order = serializers.IntegerField()
 
     class Meta:
+        """Meta class for XBlockRelationship serializer."""
+
         fields = [
             "course_key",
             "parent_location",
@@ -164,6 +172,7 @@ class XBlockRelationshipSerializer(BaseSinkSerializer):
         ]
 
     def to_representation(self, instance):
+        """Return the representation of the XBlockRelationship instance."""
         return {
             "course_key": str(instance.course_key),
             "parent_location": str(instance.parent_location),

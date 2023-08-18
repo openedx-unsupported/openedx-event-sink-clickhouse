@@ -3,7 +3,7 @@ from event_sink_clickhouse.serializers import UserProfileSerializer
 from event_sink_clickhouse.sinks.base_sink import ModelBaseSink
 
 
-class UserProfileSink(ModelBaseSink):
+class UserProfileSink(ModelBaseSink):  # pylint: disable=abstract-method
     """
     Sink for user profile events
     """

@@ -121,7 +121,9 @@ class ModelBaseSink(BaseSink):
             )
 
         if self.nested_sinks:
-            self._nested_sinks = [sink(connection_overrides, log) for sink in self.nested_sinks]
+            self._nested_sinks = [
+                sink(connection_overrides, log) for sink in self.nested_sinks
+            ]
 
     def get_model(self):
         """
@@ -152,7 +154,9 @@ class ModelBaseSink(BaseSink):
 
             for item in serialized_item:
                 for nested_sink in self._nested_sinks:
-                    nested_sink.dump_related(item, item["dump_id"], item["time_last_dumped"])
+                    nested_sink.dump_related(
+                        item, item["dump_id"], item["time_last_dumped"]
+                    )
         else:
             item = self.get_object(item_id)
             serialized_item = self.serialize_item(item, many=many, initial=initial)
@@ -160,14 +164,22 @@ class ModelBaseSink(BaseSink):
                 f"Now dumping {self.name} {item_id} to ClickHouse",
             )
             self.send_item_and_log(item_id, serialized_item, many)
-            self.log.info(
-                f"Completed dumping {self.name} {item_id} to ClickHouse"
-            )
+            self.log.info(f"Completed dumping {self.name} {item_id} to ClickHouse")
 
             for nested_sink in self._nested_sinks:
-                nested_sink.dump_related(serialized_item, serialized_item["dump_id"], serialized_item["time_last_dumped"])
+                nested_sink.dump_related(
+                    serialized_item,
+                    serialized_item["dump_id"],
+                    serialized_item["time_last_dumped"],
+                )
 
-    def send_item_and_log(self, item_id, serialized_item, many,):
+    def send_item_and_log(
+        self,
+        item_id,
+        serialized_item,
+        many,
+    ):
+        """Send the item to clickhouse and log any errors"""
         try:
             self.send_item(serialized_item, many=many)
         except Exception:
@@ -182,7 +194,7 @@ class ModelBaseSink(BaseSink):
         """
         return self.get_model().objects.get(id=item_id)
 
-    def dump_related(self, related_key, dump_id, time_last_dumped):
+    def dump_related(self, serialized_item, dump_id, time_last_dumped):
         """
         Dump related items to ClickHouse
         """
@@ -196,7 +208,9 @@ class ModelBaseSink(BaseSink):
         Serialize the data to be sent to ClickHouse
         """
         Serializer = self.get_serializer()
-        serializer = Serializer(item, many=many, initial=initial)  # pylint: disable=not-callable
+        serializer = Serializer(  # pylint: disable=not-callable
+            item, many=many, initial=initial
+        )
         return serializer.data
 
     def get_serializer(self):
@@ -236,7 +250,9 @@ class ModelBaseSink(BaseSink):
             auth=self.ch_auth,
         )
 
-        self._send_clickhouse_request(request, expected_insert_rows=len(serialized_item) if many else 1)
+        self._send_clickhouse_request(
+            request, expected_insert_rows=len(serialized_item) if many else 1
+        )
 
     def fetch_target_items(self, ids=None, skip_ids=None, force_dump=False):
         """
