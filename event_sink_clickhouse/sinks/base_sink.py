@@ -92,6 +92,16 @@ class ModelBaseSink(BaseSink):
 
     This class is used for the model based event sink, which uses the Django ORM to write
     events to ClickHouse.
+
+    Attributes:
+        unique_key (str): The unique key for the model.
+        clickhouse_table_name (str): The name of the ClickHouse table to write to.
+        queryset (QuerySet): The Django ORM queryset to use for the insert.
+        name (str): A nice name for logging.
+        timestamp_field (str): The name of the timestamp field for the model.
+        serializer_class (Serializer): The serializer class to use for the insert.
+        model (str): The name of the model in EVENT_SINK_CLICKHOUSE_MODEL_CONFIG.
+        nested_sinks (list): A list of nested sinks to use for subsequent sinks.
     """
 
     unique_key = None
