@@ -8,7 +8,7 @@ from celery import shared_task
 from edx_django_utils.monitoring import set_code_owner_attribute
 from opaque_keys.edx.keys import CourseKey
 
-from event_sink_clickhouse.sinks.course_published import CoursePublishedSink
+from event_sink_clickhouse.sinks.course_published import CourseOverviewSink
 from event_sink_clickhouse.sinks.user_profile_sink import UserProfileSink
 
 log = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ def dump_course_to_clickhouse(course_key_string, connection_overrides=None):
             parameters specified in `settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG`.
     """
     course_key = CourseKey.from_string(course_key_string)
-    sink = CoursePublishedSink(
+    sink = CourseOverviewSink(
         connection_overrides=connection_overrides, log=celery_log
     )
     sink.dump(course_key)

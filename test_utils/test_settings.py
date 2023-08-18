@@ -34,5 +34,9 @@ EVENT_SINK_CLICKHOUSE_MODEL_CONFIG = {
     "user_profile": {
         "module": "common.djangoapps.student.models",
         "model": "UserProfile",
+    },
+    "course_overviews": {
+        "module": "openedx.core.djangoapps.content.course_overviews.models",
+        "model": "CourseOverview",
     }
 }

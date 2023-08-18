@@ -28,6 +28,7 @@ class BaseSink:
     }
 
     def __init__(self, connection_overrides, log):
+        self.connection_overrides = connection_overrides
         self.log = log
         self.ch_url = settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG["url"]
         self.ch_auth = ClickHouseAuth(
@@ -100,12 +101,13 @@ class ModelBaseSink(BaseSink):
     timestamp_field = None
     serializer_class = None
     model = None
+    nested_sinks = []
+    _nested_sinks = []
 
     def __init__(self, connection_overrides, log):
         super().__init__(connection_overrides, log)
 
         required_fields = [
-            self.model,
             self.clickhouse_table_name,
             self.timestamp_field,
             self.unique_key,
@@ -114,9 +116,12 @@ class ModelBaseSink(BaseSink):
 
         if not all(required_fields):
             raise NotImplementedError(
-                "ModelBaseSink needs to be subclassed with model, clickhouse_table_name,"
+                "ModelBaseSink needs to be subclassed with clickhouse_table_name,"
                 "timestamp_field, unique_key, and name"
             )
+
+        if self.nested_sinks:
+            self._nested_sinks = [sink(connection_overrides, log) for sink in self.nested_sinks]
 
     def get_model(self):
         """
@@ -130,32 +135,68 @@ class ModelBaseSink(BaseSink):
         """
         return self.get_model().objects.all()
 
-    def dump(self, item_id):
+    def dump(self, item_id, many=False, initial=None):
         """
         Do the serialization and send to ClickHouse
         """
-        item = self.get_model().objects.get(id=item_id)
-        serialized_items = self.serialize_item(item)
+        if many:
+            # If we're dumping many items, we spect to get a list of items
+            serialized_item = self.serialize_item(item_id, many=many, initial=initial)
+            self.log.info(
+                f"Now dumping {len(serialized_item)} {self.name} to ClickHouse",
+            )
+            self.send_item_and_log(item_id, serialized_item, many)
+            self.log.info(
+                f"Completed dumping {len(serialized_item)} {self.name} to ClickHouse"
+            )
 
-        self.log.info(
-            f"Now dumping {self.name} {item_id} to ClickHouse",
-        )
+            for item in serialized_item:
+                for nested_sink in self._nested_sinks:
+                    nested_sink.dump_related(item, item["dump_id"], item["time_last_dumped"])
+        else:
+            item = self.get_object(item_id)
+            serialized_item = self.serialize_item(item, many=many, initial=initial)
+            self.log.info(
+                f"Now dumping {self.name} {item_id} to ClickHouse",
+            )
+            self.send_item_and_log(item_id, serialized_item, many)
+            self.log.info(
+                f"Completed dumping {self.name} {item_id} to ClickHouse"
+            )
 
+            for nested_sink in self._nested_sinks:
+                nested_sink.dump_related(serialized_item, serialized_item["dump_id"], serialized_item["time_last_dumped"])
+
+    def send_item_and_log(self, item_id, serialized_item, many,):
         try:
-            self.send_item(serialized_items)
-            self.log.info("Completed dumping %s to ClickHouse", item_id)
+            self.send_item(serialized_item, many=many)
         except Exception:
             self.log.exception(
                 f"Error trying to dump {self.name} f{str(item_id)} to ClickHouse!",
             )
             raise
 
-    def serialize_item(self, item):
+    def get_object(self, item_id):
+        """
+        Return the object to be dumped to ClickHouse
+        """
+        return self.get_model().objects.get(id=item_id)
+
+    def dump_related(self, related_key, dump_id, time_last_dumped):
+        """
+        Dump related items to ClickHouse
+        """
+        raise NotImplementedError(
+            "dump_related needs to be implemented in the subclass"
+            f"{self.__class__.__name__}!"
+        )
+
+    def serialize_item(self, item, many=False, initial=None):
         """
         Serialize the data to be sent to ClickHouse
         """
         Serializer = self.get_serializer()
-        serializer = Serializer(item)  # pylint: disable=not-callable
+        serializer = Serializer(item, many=many, initial=initial)  # pylint: disable=not-callable
         return serializer.data
 
     def get_serializer(self):
@@ -164,7 +205,7 @@ class ModelBaseSink(BaseSink):
         """
         return self.serializer_class
 
-    def send_item(self, serialized_item):
+    def send_item(self, serialized_item, many=False):
         """
         Create the insert query and CSV to send the serialized CourseOverview to ClickHouse.
 
@@ -180,7 +221,12 @@ class ModelBaseSink(BaseSink):
 
         output = io.StringIO()
         writer = csv.writer(output, quoting=csv.QUOTE_NONNUMERIC)
-        writer.writerow(serialized_item.values())
+
+        if many:
+            for node in serialized_item:
+                writer.writerow(node.values())
+        else:
+            writer.writerow(serialized_item.values())
 
         request = requests.Request(
             "POST",
@@ -190,7 +236,7 @@ class ModelBaseSink(BaseSink):
             auth=self.ch_auth,
         )
 
-        self._send_clickhouse_request(request, expected_insert_rows=1)
+        self._send_clickhouse_request(request, expected_insert_rows=len(serialized_item) if many else 1)
 
     def fetch_target_items(self, ids=None, skip_ids=None, force_dump=False):
         """

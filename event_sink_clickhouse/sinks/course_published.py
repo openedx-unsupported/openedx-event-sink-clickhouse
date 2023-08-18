@@ -20,7 +20,8 @@ import requests
 from django.utils import timezone
 from opaque_keys.edx.keys import CourseKey
 
-from event_sink_clickhouse.sinks.base_sink import BaseSink
+from event_sink_clickhouse.sinks.base_sink import BaseSink, ModelBaseSink
+from event_sink_clickhouse.serializers import CourseOverviewSerializer
 
 # Defaults we want to ensure we fail early on bulk inserts
 CLICKHOUSE_BULK_INSERT_PARAMS = {
@@ -56,26 +57,18 @@ class CoursePublishedSink(BaseSink):
 
         return modulestore()
 
-    @staticmethod
+    @staticmethod ## DONE
     def _get_course_overview_model():  # pragma: no cover
         """
         Import and return CourseOverview.
         Placed here to avoid model import at startup and to facilitate mocking them in testing.
         """
         # pylint: disable=import-outside-toplevel,import-error
-        from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
+        from openedx.core.djangoapps.content.course_overviews.models import (
+            CourseOverview,
+        )
 
         return CourseOverview
-
-    @staticmethod
-    def strip_branch_and_version(location):
-        """
-        Removes the branch and version information from a location.
-        Args:
-            location: an xblock's location.
-        Returns: that xblock's location without branch and version information.
-        """
-        return location.for_branch(None)
 
     @staticmethod
     def serialize_xblock(item, index, detached_xblock_types, dump_id, dump_timestamp):
@@ -128,7 +121,7 @@ class CoursePublishedSink(BaseSink):
 
         return serialized_block
 
-    @staticmethod
+    @staticmethod ## DONE
     def serialize_course_overview(overview, dump_id, time_last_dumped):
         """
         Return a dict representing a subset of CourseOverview fields.
@@ -239,7 +232,7 @@ class CoursePublishedSink(BaseSink):
         nodes = list(location_to_node.values())
         return serialized_course_overview, nodes, relationships
 
-    def _send_course_overview(self, serialized_overview):
+    def _send_course_overview(self, serialized_overview): ## DONE
         """
         Create the insert query and CSV to send the serialized CourseOverview to ClickHouse.
 
@@ -318,7 +311,7 @@ class CoursePublishedSink(BaseSink):
 
         self._send_clickhouse_request(request, expected_insert_rows=len(relationships))
 
-    def dump(self, course_key):
+    def dump(self, course_key): ## DONE
         """
         Do the serialization and send to ClickHouse
         """
@@ -405,7 +398,7 @@ class CoursePublishedSink(BaseSink):
                 should_be_dumped, reason = self.should_dump_course(course_key)
                 yield course_key, should_be_dumped, reason
 
-    def get_course_last_dump_time(self, course_key):
+    def get_course_last_dump_time(self, course_key): ## DONE
         """
         Get the most recent dump time for this course from ClickHouse
 
@@ -434,7 +427,7 @@ class CoursePublishedSink(BaseSink):
         # Course has never been dumped, return None
         return None
 
-    def should_dump_course(self, course_key):
+    def should_dump_course(self, course_key):  ## DONE
         """
         Only dump the course if it's been changed since the last time it's been
         dumped.
@@ -481,3 +474,159 @@ class CoursePublishedSink(BaseSink):
                 f"last dumped {course_last_dump_time} >= last published {str(course_last_published_date)}"
             )
         return needs_dump, reason
+
+
+class XBlockRelationshipSink(ModelBaseSink):
+    """
+    Sink for XBlock relationships
+    """
+    # unique_key = "dump_id"
+    clickhouse_table_name = "course_relationships"
+    name = "XBlock Relationships"
+    timestamp_field = "time_last_dumped"
+    unique_key = "parent_location"
+
+    def dump_related(self, serialized_block, dump_id, time_last_dumped):
+        self.dump(serialized_block, many=True, initial={"dump_id": dump_id, "time_last_dumped": time_last_dumped})
+
+    def serialize_item(self, item, many=False, initial=None):
+        return item
+
+
+class XBlockSink(ModelBaseSink):
+    """
+    Sink for XBlock model
+    """
+    unique_key = "location"
+    clickhouse_table_name = "course_blocks"
+    timestamp_field = "time_last_dumped"
+    name = "XBlock"
+    nested_sinks = []
+
+    def dump_related(self, serialized_course, dump_id, time_last_dumped):
+        """Dump all XBlocks for a course"""
+        self.dump(serialized_course, many=True, initial={"dump_id": dump_id, "time_last_dumped": time_last_dumped})
+
+
+    def serialize_item(self, serialized_course, many=False, initial=None):
+        """
+        Serialize an XBlock into a dict
+        """
+        course_key = CourseKey.from_string(serialized_course["course_key"])
+        modulestore = XBlockSink.get_modulestore()
+        detached_xblock_types = XBlockSink.get_detached_xblock_types()
+
+        location_to_node = {}
+        items = modulestore.get_items(course_key)
+
+        # Serialize the XBlocks to dicts and map them with their location as keys the
+        # whole map needs to be completed before we can define relationships
+        index = 0
+        for item in items:
+            index += 1
+            fields = self.serialize_xblock(
+                item, index, detached_xblock_types, initial["dump_id"], initial["time_last_dumped"]
+            )
+            location_to_node[self.strip_branch_and_version(item.location)] = fields
+
+        nodes = list(location_to_node.values())
+
+        self.serialize_relationships(items, location_to_node, course_key, initial["dump_id"], initial["time_last_dumped"])
+
+        return nodes
+
+    def serialize_relationships(self, items, location_to_node, course_id, dump_id, dump_timestamp):
+        relationships = []
+        for item in items:
+            for index, child in enumerate(item.get_children()):
+                parent_node = location_to_node.get(
+                    self.strip_branch_and_version(item.location)
+                )
+                child_node = location_to_node.get(
+                    self.strip_branch_and_version(child.location)
+                )
+
+                if parent_node is not None and child_node is not None:
+                    relationship = {
+                        "course_key": str(course_id),
+                        "parent_location": str(parent_node["location"]),
+                        "child_location": str(child_node["location"]),
+                        "order": index,
+                        "dump_id": dump_id,
+                        "time_last_dumped": dump_timestamp,
+                    }
+                    relationships.append(relationship)
+        XBlockRelationshipSink(self.connection_overrides, self.log).dump_related(relationships, dump_id, dump_timestamp)
+
+    def serialize_xblock(self, item, index, detached_xblock_types, dump_id, time_last_dumped):
+        course_key = item.scope_ids.usage_id.course_key
+        block_type = item.scope_ids.block_type
+
+        # Extra data not needed for the table to function, things can be
+        # added here without needing to rebuild the whole table.
+        json_data = {
+            "course": course_key.course,
+            "run": course_key.run,
+            "block_type": block_type,
+            "detached": 1 if block_type in detached_xblock_types else 0,
+        }
+
+        # Core table data, if things change here it's a big deal.
+        serialized_block = {
+            "org": course_key.org,
+            "course_key": str(course_key),
+            "location": str(item.location),
+            "display_name": item.display_name_with_default.replace("'", "'"),
+            "xblock_data_json": json.dumps(json_data),
+            "order": index,
+            "edited_on": str(getattr(item, "edited_on", "")),
+            "dump_id": dump_id,
+            "time_last_dumped": time_last_dumped,
+        }
+
+        return serialized_block
+
+    @classmethod
+    def get_modulestore(cls):
+        """
+        Import and return modulestore.
+        Placed here to avoid model import at startup and to facilitate mocking them in testing.
+        """
+        # pylint: disable=import-outside-toplevel,import-error
+        from xmodule.modulestore.django import modulestore
+
+        return modulestore()
+
+    @classmethod
+    def get_detached_xblock_types(cls):
+        """
+        Import and return DETACHED_XBLOCK_TYPES.
+        Placed here to avoid model import at startup and to facilitate mocking them in testing.
+        """
+        # pylint: disable=import-outside-toplevel,import-error
+        from xmodule.modulestore.store_utilities import DETACHED_XBLOCK_TYPES
+
+        return DETACHED_XBLOCK_TYPES
+
+    @staticmethod
+    def strip_branch_and_version(location):
+        """
+        Removes the branch and version information from a location.
+        Args:
+            location: an xblock's location.
+        Returns: that xblock's location without branch and version information.
+        """
+        return location.for_branch(None)
+
+
+class CourseOverviewSink(ModelBaseSink):
+    """
+    Sink for CourseOverview model
+    """
+    model = "course_overviews"
+    unique_key = "course_key"
+    clickhouse_table_name = "course_overviews"
+    timestamp_field = "time_last_dumped"
+    name = "Course Overview"
+    serializer_class = CourseOverviewSerializer
+    nested_sinks = [XBlockSink]

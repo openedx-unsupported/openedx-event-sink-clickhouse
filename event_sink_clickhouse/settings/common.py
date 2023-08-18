@@ -22,5 +22,9 @@ def plugin_settings(settings):
         "user_profile": {
             "module": "common.djangoapps.student.models",
             "model": "UserProfile",
+        },
+        "course_overviews": {
+            "module": "openedx.core.djangoapps.content.course_overviews.models",
+            "model": "CourseOverview",
         }
     }

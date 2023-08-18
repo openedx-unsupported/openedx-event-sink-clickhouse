@@ -12,13 +12,18 @@ def get_model(model_setting):
     MODEL_CONFIG = getattr(settings, "EVENT_SINK_CLICKHOUSE_MODEL_CONFIG", {})
 
     model_config = MODEL_CONFIG.get(model_setting)
+    if not model_config:
+        log.error("Unable to find model config for %s", model_setting)
+        return None
 
     module = model_config.get("module")
     if not module:
+        log.error("Module was not specified in %s", model_setting)
         return None
 
     model_name = model_config.get("model")
     if not model_name:
+        log.error("Model was not specified in %s", model_setting)
         return None
 
     try:
