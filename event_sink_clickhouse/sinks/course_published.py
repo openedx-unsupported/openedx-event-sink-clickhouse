@@ -106,6 +106,7 @@ class CoursePublishedSink(BaseSink):
             'run': course_key.run,
             'block_type': block_type,
             'detached': 1 if block_type in detached_xblock_types else 0,
+            'graded': 1 if getattr(item, 'graded', False) else 0,
         }
 
         # Core table data, if things change here it's a big deal.

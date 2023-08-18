@@ -1,7 +1,9 @@
 """
 Tests for the course_published sinks.
 """
+import json
 import logging
+import uuid
 from datetime import datetime
 from unittest.mock import patch
 
@@ -206,3 +208,18 @@ def test_get_last_dump_time():
     last_published_date = sink.get_course_last_dump_time(course_key)
     dt = datetime.strptime(last_published_date, "%Y-%m-%d %H:%M:%S.%f+00:00")
     assert dt
+
+
+def test_xblock_json_seralization():
+    course = course_factory()
+
+    for index, item in enumerate(course):
+        block = CoursePublishedSink.serialize_xblock(
+            item,
+            index,
+            mock_detached_xblock_types(),
+            str(uuid.uuid4()),
+            str(datetime.now()),
+        )
+        block_json = json.loads(block['xblock_data_json'])
+        assert bool(int(block_json['graded'])) == item.graded
