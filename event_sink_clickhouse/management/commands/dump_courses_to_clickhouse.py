@@ -25,7 +25,7 @@ from textwrap import dedent
 from django.core.management.base import BaseCommand, CommandError
 from edx_django_utils.cache import RequestCache
 
-from event_sink_clickhouse.sinks.course_published import CoursePublishedSink
+from event_sink_clickhouse.sinks.course_published import CourseOverviewSink
 from event_sink_clickhouse.tasks import dump_course_to_clickhouse
 
 log = logging.getLogger(__name__)
@@ -49,13 +49,13 @@ def dump_target_courses_to_clickhouse(
     Returns: two lists--one of the courses that had dump jobs queued for them
         and one of courses that did not.
     """
-    sink = CoursePublishedSink(connection_overrides, log)
+    sink = CourseOverviewSink(connection_overrides, log)
 
     submitted_courses = []
     skipped_courses = []
 
     index = 0
-    for course_key, should_be_dumped, reason in sink.fetch_target_courses(
+    for course_key, should_be_dumped, reason in sink.fetch_target_items(
         course_keys, courses_to_skip, force
     ):
         log.info(f"Iteration {index}: {course_key}")
