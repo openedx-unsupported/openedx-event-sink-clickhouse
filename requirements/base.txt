@@ -22,7 +22,7 @@ cffi==1.15.1
     # via pynacl
 charset-normalizer==3.2.0
     # via requests
-click==8.1.6
+click==8.1.7
     # via
     #   celery
     #   click-didyoumean
@@ -54,7 +54,7 @@ idna==3.4
     # via requests
 kombu==5.3.1
     # via celery
-newrelic==8.10.0
+newrelic==8.10.1
     # via edx-django-utils
 pbr==5.11.1
     # via stevedore
