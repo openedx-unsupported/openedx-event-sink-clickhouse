@@ -12,7 +12,6 @@ LTI passwords and other secrets. We just take the fields necessary for reporting
 import datetime
 import json
 
-import requests
 from opaque_keys.edx.keys import CourseKey
 
 from event_sink_clickhouse.serializers import CourseOverviewSerializer
@@ -211,7 +210,7 @@ class CourseOverviewSink(ModelBaseSink):  # pylint: disable=abstract-method
     serializer_class = CourseOverviewSerializer
     nested_sinks = [XBlockSink]
 
-    def should_dump_item(self, course_key):
+    def should_dump_item(self, unique_key):
         """
         Only dump the course if it's been changed since the last time it's been
         dumped.
@@ -222,14 +221,14 @@ class CourseOverviewSink(ModelBaseSink):  # pylint: disable=abstract-method
             - reason why course needs, or does not need, to be dumped (string)
         """
 
-        course_last_dump_time = self.get_last_dumped_timestamp(course_key)
+        course_last_dump_time = self.get_last_dumped_timestamp(unique_key)
 
         # If we don't have a record of the last time this command was run,
         # we should serialize the course and dump it
         if course_last_dump_time is None:
             return True, "Course is not present in ClickHouse"
 
-        course_last_published_date = self.get_course_last_published(course_key)
+        course_last_published_date = self.get_course_last_published(unique_key)
 
         # If we've somehow dumped this course but there is no publish date
         # skip it

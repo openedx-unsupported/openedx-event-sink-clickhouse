@@ -1,9 +1,7 @@
 """
 Tests for the course_published sinks.
 """
-import json
 import logging
-import uuid
 from datetime import datetime
 from unittest.mock import patch
 
