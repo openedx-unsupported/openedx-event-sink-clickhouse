@@ -9,8 +9,10 @@ Does the following:
 Note that the serialization format does not include all fields as there may be things like
 LTI passwords and other secrets. We just take the fields necessary for reporting at this time.
 """
+import datetime
 import json
 
+import requests
 from opaque_keys.edx.keys import CourseKey
 
 from event_sink_clickhouse.serializers import CourseOverviewSerializer
@@ -208,3 +210,70 @@ class CourseOverviewSink(ModelBaseSink):  # pylint: disable=abstract-method
     name = "Course Overview"
     serializer_class = CourseOverviewSerializer
     nested_sinks = [XBlockSink]
+
+    def should_dump_item(self, course_key):
+        """
+        Only dump the course if it's been changed since the last time it's been
+        dumped.
+        Args:
+            course_key: a CourseKey object.
+        Returns:
+            - whether this course should be dumped (bool)
+            - reason why course needs, or does not need, to be dumped (string)
+        """
+
+        course_last_dump_time = self.get_last_dumped_timestamp(course_key)
+
+        # If we don't have a record of the last time this command was run,
+        # we should serialize the course and dump it
+        if course_last_dump_time is None:
+            return True, "Course is not present in ClickHouse"
+
+        course_last_published_date = self.get_course_last_published(course_key)
+
+        # If we've somehow dumped this course but there is no publish date
+        # skip it
+        if course_last_dump_time and course_last_published_date is None:
+            return False, "No last modified date in CourseOverview"
+
+        # Otherwise, dump it if it is newer
+        course_last_dump_time = datetime.datetime.strptime(
+            course_last_dump_time, "%Y-%m-%d %H:%M:%S.%f+00:00"
+        )
+        course_last_published_date = datetime.datetime.strptime(
+            course_last_published_date, "%Y-%m-%d %H:%M:%S.%f+00:00"
+        )
+        needs_dump = course_last_dump_time < course_last_published_date
+
+        if needs_dump:
+            reason = (
+                "Course has been published since last dump time - "
+                f"last dumped {course_last_dump_time} < last published {str(course_last_published_date)}"
+            )
+        else:
+            reason = (
+                f"Course has NOT been published since last dump time - "
+                f"last dumped {course_last_dump_time} >= last published {str(course_last_published_date)}"
+            )
+        return needs_dump, reason
+
+    def get_course_last_published(self, course_key):
+        """
+        Get approximate last publish date for the given course.
+        We use the 'modified' column in the CourseOverview table as a quick and easy
+        (although perhaps inexact) way of determining when a course was last
+        published. This works because CourseOverview rows are re-written upon
+        course publish.
+        Args:
+            course_key: a CourseKey
+        Returns: The datetime the course was last published at, stringified.
+            Uses Python's default str(...) implementation for datetimes, which
+            is sortable and similar to ISO 8601:
+            https://docs.python.org/3/library/datetime.html#datetime.date.__str__
+        """
+        CourseOverview = self.get_model()
+        approx_last_published = CourseOverview.get_from_id(course_key).modified
+        if approx_last_published:
+            return str(approx_last_published)
+
+        return None
