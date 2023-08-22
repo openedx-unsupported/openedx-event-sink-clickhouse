@@ -157,10 +157,9 @@ class ModelBaseSink(BaseSink):
                 "timestamp_field, unique_key, and name"
             )
 
-        if self.nested_sinks:
-            self._nested_sinks = [
-                sink(connection_overrides, log) for sink in self.nested_sinks
-            ]
+        self._nested_sinks = [
+            sink(connection_overrides, log) for sink in self.nested_sinks
+        ]
 
     def get_model(self):
         """
