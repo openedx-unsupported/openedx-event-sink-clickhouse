@@ -13,7 +13,7 @@ import responses
 from responses import matchers
 from responses.registries import OrderedRegistry
 
-from event_sink_clickhouse.sinks.course_published import CoursePublishedSink
+from event_sink_clickhouse.sinks.course_published import CourseOverviewSink
 from event_sink_clickhouse.tasks import dump_course_to_clickhouse
 from test_utils.helpers import (
     check_block_csv_matcher,
@@ -29,9 +29,9 @@ from test_utils.helpers import (
 
 
 @responses.activate(registry=OrderedRegistry)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-@patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_course_overview_model")
-@patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_detached_xblock_types")
-@patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_modulestore")
+@patch("event_sink_clickhouse.sinks.course_published.CourseOverviewSink.get_model")
+@patch("event_sink_clickhouse.sinks.course_published.XBlockSink.get_detached_xblock_types")
+@patch("event_sink_clickhouse.sinks.course_published.XBlockSink.get_modulestore")
 def test_course_publish_success(mock_modulestore, mock_detached, mock_overview):
     """
     Test of a successful end-to-end run.
@@ -82,9 +82,9 @@ def test_course_publish_success(mock_modulestore, mock_detached, mock_overview):
 
 
 @responses.activate(registry=OrderedRegistry)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-@patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_course_overview_model")
-@patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_detached_xblock_types")
-@patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_modulestore")
+@patch("event_sink_clickhouse.sinks.course_published.CourseOverviewSink.get_model")
+@patch("event_sink_clickhouse.sinks.course_published.XBlockSink.get_detached_xblock_types")
+@patch("event_sink_clickhouse.sinks.course_published.XBlockSink.get_modulestore")
 # pytest:disable=unused-argument
 def test_course_publish_clickhouse_error(mock_modulestore, mock_detached, mock_overview, caplog):
     """
@@ -118,7 +118,7 @@ def test_course_publish_clickhouse_error(mock_modulestore, mock_detached, mock_o
     assert f"Error trying to dump course {course} to ClickHouse!" in caplog.text
 
 
-@patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_course_overview_model")
+@patch("event_sink_clickhouse.sinks.course_published.CourseOverviewSink.get_model")
 def test_get_course_last_published(mock_overview):
     """
     Make sure we get a valid date back from this in the expected format.
@@ -131,13 +131,13 @@ def test_get_course_last_published(mock_overview):
     course_key = course_str_factory()
 
     # Confirm that the string date we get back is a valid date
-    last_published_date = CoursePublishedSink.get_course_last_published(course_key)
+    last_published_date = CourseOverviewSink(None, None).get_course_last_published(course_key)
     dt = datetime.strptime(last_published_date, "%Y-%m-%d %H:%M:%S.%f")
     assert dt
 
 
 @responses.activate(registry=OrderedRegistry)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-@patch("event_sink_clickhouse.sinks.course_published.CoursePublishedSink._get_course_overview_model")
+@patch("event_sink_clickhouse.sinks.course_published.CourseOverviewSink.get_model")
 def test_no_last_published_date(mock_overview):
     """
     Test that we get a None value back for courses that don't have a modified date.
@@ -162,8 +162,8 @@ def test_no_last_published_date(mock_overview):
     )
 
     # Confirm that the string date we get back is a valid date
-    sink = CoursePublishedSink(connection_overrides={}, log=logging.getLogger())
-    should_dump_course, reason = sink.should_dump_course(course_key)
+    sink = CourseOverviewSink(connection_overrides={}, log=logging.getLogger())
+    should_dump_course, reason = sink.should_dump_item(course_key)
 
     assert should_dump_course is False
     assert reason == "No last modified date in CourseOverview"
@@ -183,8 +183,8 @@ def test_course_not_present_in_clickhouse():
     )
 
     # Confirm that the string date we get back is a valid date
-    sink = CoursePublishedSink(connection_overrides={}, log=logging.getLogger())
-    last_published_date = sink.get_course_last_dump_time(course_key)
+    sink = CourseOverviewSink(connection_overrides={}, log=logging.getLogger())
+    last_published_date = sink.get_last_dumped_timestamp(course_key)
     assert last_published_date is None
 
 
@@ -204,22 +204,7 @@ def test_get_last_dump_time():
     )
 
     # Confirm that the string date we get back is a valid date
-    sink = CoursePublishedSink(connection_overrides={}, log=logging.getLogger())
-    last_published_date = sink.get_course_last_dump_time(course_key)
+    sink = CourseOverviewSink(connection_overrides={}, log=logging.getLogger())
+    last_published_date = sink.get_last_dumped_timestamp(course_key)
     dt = datetime.strptime(last_published_date, "%Y-%m-%d %H:%M:%S.%f+00:00")
     assert dt
-
-
-def test_xblock_json_seralization():
-    course = course_factory()
-
-    for index, item in enumerate(course):
-        block = CoursePublishedSink.serialize_xblock(
-            item,
-            index,
-            mock_detached_xblock_types(),
-            str(uuid.uuid4()),
-            str(datetime.now()),
-        )
-        block_json = json.loads(block['xblock_data_json'])
-        assert bool(int(block_json['graded'])) == item.graded

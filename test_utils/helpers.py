@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, Mock
 from opaque_keys.edx.keys import CourseKey
 from opaque_keys.edx.locator import BlockUsageLocator
 
-from event_sink_clickhouse.sinks.course_published import CoursePublishedSink
+from event_sink_clickhouse.sinks.course_published import XBlockSink
 
 ORIG_IMPORT = __import__
 ORG = "testorg"
@@ -307,8 +307,8 @@ def check_relationship_csv_matcher(course):
     for block in course:
         course_key = str(block.location.course_key)
         for _, child in enumerate(block.get_children()):
-            parent_node = str(CoursePublishedSink.strip_branch_and_version(block.location))
-            child_node = str(CoursePublishedSink.strip_branch_and_version(child.location))
+            parent_node = str(XBlockSink.strip_branch_and_version(block.location))
+            child_node = str(XBlockSink.strip_branch_and_version(child.location))
             relationships.append((course_key, parent_node, child_node))
 
     def match(request):

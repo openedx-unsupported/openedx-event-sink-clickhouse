@@ -19,9 +19,9 @@ def mock_common_calls():
     """
     command_path = "event_sink_clickhouse.management.commands.dump_courses_to_clickhouse"
     with patch(command_path+".dump_course_to_clickhouse") as mock_dump_course:
-        with patch(command_path+".CoursePublishedSink._get_course_overview_model") as mock_get_course_overview_model:
-            with patch(command_path+".CoursePublishedSink._get_modulestore") as mock_modulestore:
-                with patch(command_path+".CoursePublishedSink.get_course_last_dump_time") as mock_last_dump_time:
+        with patch(command_path+".CourseOverviewSink.get_model") as mock_get_course_overview_model:
+            with patch("event_sink_clickhouse.sinks.course_published.XBlockSink.get_modulestore") as mock_modulestore:
+                with patch(command_path+".CourseOverviewSink.get_last_dumped_timestamp") as mock_last_dump_time:
                     # Set a reasonable default last dump time a year in the past
                     mock_last_dump_time.return_value = \
                         (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
