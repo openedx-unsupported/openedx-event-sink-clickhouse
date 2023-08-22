@@ -295,7 +295,7 @@ class ModelBaseSink(BaseSink):
         Fetch the items that should be dumped to ClickHouse
         """
         if ids:
-            item_keys = [self.convert_id(id) for ids in ids]
+            item_keys = [self.convert_id(item_id) for item_id in ids]
         else:
             item_keys = [item.id for item in self.get_queryset()]
 
@@ -307,6 +307,12 @@ class ModelBaseSink(BaseSink):
             else:
                 should_be_dumped, reason = self.should_dump_item(item_key)
                 yield item_key, should_be_dumped, reason
+
+    def convert_id(self, item_id):
+        """
+        Convert the id to the correct type for the model
+        """
+        return item_id
 
     def should_dump_item(self, unique_key):  # pylint: disable=unused-argument
         """

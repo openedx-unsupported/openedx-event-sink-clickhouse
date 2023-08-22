@@ -10,6 +10,7 @@ Note that the serialization format does not include all fields as there may be t
 LTI passwords and other secrets. We just take the fields necessary for reporting at this time.
 """
 import json
+
 from opaque_keys.edx.keys import CourseKey
 
 from event_sink_clickhouse.serializers import CourseOverviewSerializer

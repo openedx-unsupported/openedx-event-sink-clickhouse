@@ -40,6 +40,7 @@ class UserProfileSerializer(BaseSinkSerializer, serializers.ModelSerializer):
         model = get_model("user_profile")
         fields = [
             "id",
+            "user_id",
             "name",
             "meta",
             "courseware",

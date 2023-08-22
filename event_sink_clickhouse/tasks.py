@@ -3,6 +3,7 @@ This file contains a management command for exporting course modulestore data to
 """
 
 import logging
+from importlib import import_module
 
 from celery import shared_task
 from edx_django_utils.monitoring import set_code_owner_attribute
@@ -47,3 +48,23 @@ def dump_user_profile_to_clickhouse(user_profile_id, connection_overrides=None):
             connection_overrides=connection_overrides, log=celery_log
         )
         sink.dump(user_profile_id)
+
+
+@shared_task
+@set_code_owner_attribute
+def dump_data_to_clickhouse(
+    sink_module, sink_name, object_id, connection_overrides=None
+):
+    """
+    Serialize a data and writes it to ClickHouse.
+
+    Arguments:
+        sink_module: module path of sink
+        sink_name: name of sink class
+        object_id: id of object
+        connection_overrides (dict):  overrides to ClickHouse connection
+    """
+    Sink = getattr(import_module(sink_module), sink_name)
+
+    sink = Sink(connection_overrides=connection_overrides, log=celery_log)
+    sink.dump(object_id)
