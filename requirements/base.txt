@@ -48,13 +48,13 @@ django-waffle==4.0.0
     # via edx-django-utils
 edx-django-utils==5.7.0
     # via -r requirements/base.in
-edx-opaque-keys==2.4.0
+edx-opaque-keys==2.5.0
     # via -r requirements/base.in
 idna==3.4
     # via requests
 kombu==5.3.1
     # via celery
-newrelic==8.10.1
+newrelic==8.11.0
     # via edx-django-utils
 pbr==5.11.1
     # via stevedore
@@ -85,6 +85,7 @@ stevedore==5.1.0
 typing-extensions==4.7.1
     # via
     #   asgiref
+    #   edx-opaque-keys
     #   kombu
 tzdata==2023.3
     # via
