@@ -19,9 +19,9 @@ def mock_common_calls():
     """
     command_path = "event_sink_clickhouse.management.commands.dump_courses_to_clickhouse"
     with patch(command_path+".dump_course_to_clickhouse") as mock_dump_course:
-        with patch(command_path+".CoursePublishedSink._get_course_overview_model") as mock_get_course_overview_model:
-            with patch(command_path+".CoursePublishedSink._get_modulestore") as mock_modulestore:
-                with patch(command_path+".CoursePublishedSink.get_course_last_dump_time") as mock_last_dump_time:
+        with patch(command_path+".CourseOverviewSink.get_model") as mock_get_course_overview_model:
+            with patch("event_sink_clickhouse.sinks.course_published.get_modulestore") as mock_modulestore:
+                with patch(command_path+".CourseOverviewSink.get_last_dumped_timestamp") as mock_last_dump_time:
                     # Set a reasonable default last dump time a year in the past
                     mock_last_dump_time.return_value = \
                         (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
@@ -92,7 +92,7 @@ def dump_command_basic_options():
             expected_num_submitted=0,
             expected_logs=[
                 "0 courses submitted for export to ClickHouse. 1 courses skipped.",
-                "Course is explicitly skipped"
+                "Course Overview is explicitly skipped"
             ]
         ),
         CommandOptions(
@@ -142,7 +142,9 @@ def test_dump_courses_options(
     )
 
     # Make sure that our mocks were called as expected
-    assert mock_modulestore.call_count == 1
+    if "courses" not in option_combination:
+        # Modulestore will only be called here if we're not passing in a list of courses
+        assert mock_modulestore.call_count == 1
     assert mock_dump_course.apply_async.call_count == expected_num_submitted
     for expected_output in expected_outputs:
         assert expected_output in caplog.text
