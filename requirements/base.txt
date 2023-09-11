@@ -38,7 +38,7 @@ click-repl==0.3.0
     # via celery
 code-annotations==1.5.0
     # via edx-toggles
-django==3.2.20
+django==3.2.21
     # via
     #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
     #   -r requirements/base.in
@@ -93,7 +93,7 @@ python-dateutil==2.8.2
     # via celery
 python-slugify==8.0.1
     # via code-annotations
-pytz==2023.3
+pytz==2023.3.post1
     # via
     #   django
     #   djangorestframework
