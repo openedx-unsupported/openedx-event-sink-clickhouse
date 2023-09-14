@@ -11,32 +11,33 @@ class EventSinkClickhouseConfig(AppConfig):
     Configuration for the event_sink_clickhouse Django application.
     """
 
-    name = 'event_sink_clickhouse'
+    name = "event_sink_clickhouse"
     verbose_name = "Event Sink ClickHouse"
 
     plugin_app = {
         PluginSettings.CONFIG: {
-            'lms.djangoapp': {
-                'production': {PluginSettings.RELATIVE_PATH: 'settings.production'},
-                'common': {PluginSettings.RELATIVE_PATH: 'settings.common'},
+            "lms.djangoapp": {
+                "production": {PluginSettings.RELATIVE_PATH: "settings.production"},
+                "common": {PluginSettings.RELATIVE_PATH: "settings.common"},
             },
-            'cms.djangoapp': {
-                'production': {PluginSettings.RELATIVE_PATH: 'settings.production'},
-                'common': {PluginSettings.RELATIVE_PATH: 'settings.common'},
-            }
+            "cms.djangoapp": {
+                "production": {PluginSettings.RELATIVE_PATH: "settings.production"},
+                "common": {PluginSettings.RELATIVE_PATH: "settings.common"},
+            },
         },
         # Configuration setting for Plugin Signals for this app.
         PluginSignals.CONFIG: {
             # Configure the Plugin Signals for each Project Type, as needed.
-            'cms.djangoapp': {
+            "cms.djangoapp": {
                 # List of all plugin Signal receivers for this app and project type.
-                PluginSignals.RECEIVERS: [{
-                    # The name of the app's signal receiver function.
-                    PluginSignals.RECEIVER_FUNC_NAME: 'receive_course_publish',
-
-                    # The full path to the module where the signal is defined.
-                    PluginSignals.SIGNAL_PATH: 'xmodule.modulestore.django.COURSE_PUBLISHED',
-                }],
+                PluginSignals.RECEIVERS: [
+                    {
+                        # The name of the app's signal receiver function.
+                        PluginSignals.RECEIVER_FUNC_NAME: "receive_course_publish",
+                        # The full path to the module where the signal is defined.
+                        PluginSignals.SIGNAL_PATH: "xmodule.modulestore.django.COURSE_PUBLISHED",
+                    }
+                ],
             }
         },
     }
@@ -47,4 +48,8 @@ class EventSinkClickhouseConfig(AppConfig):
         """
         super().ready()
 
-        from . import tasks  # pylint: disable=import-outside-toplevel, unused-import
+        from event_sink_clickhouse import (  # pylint: disable=import-outside-toplevel, unused-import
+            signals,
+            sinks,
+            tasks,
+        )

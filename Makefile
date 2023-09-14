@@ -53,6 +53,10 @@ upgrade: ## update the requirements/*.txt files with the latest packages satisfy
 quality: ## check coding style with pycodestyle and pylint
 	tox -e quality
 
+format: ## format the files with black
+	black event_sink_clickhouse
+	isort event_sink_clickhouse
+
 pii_check: ## check for PII annotations on all Django models
 	tox -e pii_check
 

@@ -115,6 +115,7 @@ setup(
     ),
     entry_points={
         "lms.djangoapp": [
+            "event-sink-clickhouse = event_sink_clickhouse.apps:EventSinkClickhouseConfig",
         ],
         "cms.djangoapp": [
             "event-sink-clickhouse = event_sink_clickhouse.apps:EventSinkClickhouseConfig",

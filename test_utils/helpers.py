@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, Mock
 from opaque_keys.edx.keys import CourseKey
 from opaque_keys.edx.locator import BlockUsageLocator
 
-from event_sink_clickhouse.sinks.course_published import CoursePublishedSink
+from event_sink_clickhouse.sinks.course_published import XBlockSink
 
 ORIG_IMPORT = __import__
 ORG = "testorg"
@@ -229,7 +229,7 @@ def check_overview_csv_matcher(course_overview):
 
                 assert dumped_json["advertised_start"] == str(course_overview.advertised_start)
                 assert dumped_json["announcement"] == str(course_overview.announcement)
-                assert dumped_json["lowest_passing_grade"] == str(course_overview.lowest_passing_grade)
+                assert dumped_json["lowest_passing_grade"] == float(course_overview.lowest_passing_grade)
                 assert dumped_json["invitation_only"] == course_overview.invitation_only
                 assert dumped_json["max_student_enrollments_allowed"] == course_overview.max_student_enrollments_allowed
                 assert dumped_json["effort"] == course_overview.effort
@@ -307,12 +307,12 @@ def check_relationship_csv_matcher(course):
     for block in course:
         course_key = str(block.location.course_key)
         for _, child in enumerate(block.get_children()):
-            parent_node = str(CoursePublishedSink.strip_branch_and_version(block.location))
-            child_node = str(CoursePublishedSink.strip_branch_and_version(child.location))
+            parent_node = str(XBlockSink.strip_branch_and_version(block.location))
+            child_node = str(XBlockSink.strip_branch_and_version(child.location))
             relationships.append((course_key, parent_node, child_node))
 
     def match(request):
-        body = request.body
+        body = request.body.decode("utf-8")
         lines = body.split("\n")[:-1]
 
         # The relationships CSV should have the same number of relationships as our test
