@@ -93,16 +93,18 @@ class CourseOverviewSerializer(BaseSinkSerializer, serializers.ModelSerializer):
     def get_course_data_json(self, overview):
         """Return the course data as a JSON string."""
         json_fields = {
-            "advertised_start": overview.advertised_start,
-            "announcement": overview.announcement,
-            "lowest_passing_grade": float(overview.lowest_passing_grade),
-            "invitation_only": overview.invitation_only,
-            "max_student_enrollments_allowed": overview.max_student_enrollments_allowed,
-            "effort": overview.effort,
-            "enable_proctored_exams": overview.enable_proctored_exams,
-            "entrance_exam_enabled": overview.entrance_exam_enabled,
-            "external_id": overview.external_id,
-            "language": overview.language,
+            "advertised_start": getattr(overview, "advertised_start", ""),
+            "announcement": getattr(overview, "announcement", ""),
+            "lowest_passing_grade": float(getattr(overview, "lowest_passing_grade", 0.0)),
+            "invitation_only": getattr(overview, "invitation_only", ""),
+            "max_student_enrollments_allowed": getattr(
+                overview, "max_student_enrollments_allowed", None
+            ),
+            "effort": getattr(overview, "effort", ""),
+            "enable_proctored_exams": getattr(overview, "enable_proctored_exams", ""),
+            "entrance_exam_enabled": getattr(overview, "entrance_exam_enabled", ""),
+            "external_id": getattr(overview, "external_id", ""),
+            "language": getattr(overview, "language", ""),
         }
         return json.dumps(json_fields)
 
