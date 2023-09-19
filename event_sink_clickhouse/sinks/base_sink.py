@@ -297,14 +297,14 @@ class ModelBaseSink(BaseSink):
         if ids:
             item_keys = [self.convert_id(item_id) for item_id in ids]
         else:
-            item_keys = [self.convert_id(item.id) for item in self.get_queryset()]
+            item_keys = [item.id for item in self.get_queryset()]
 
         skip_ids = (
-            [self.convert_id(item_id) for item_id in skip_ids] if skip_ids else []
+            [str(item_id) for item_id in skip_ids] if skip_ids else []
         )
 
         for item_key in item_keys:
-            if item_key in skip_ids:
+            if str(item_key) in skip_ids:
                 yield item_key, False, f"{self.name} is explicitly skipped"
             elif force_dump:
                 yield item_key, True, "Force is set"
