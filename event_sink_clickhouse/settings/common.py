@@ -27,4 +27,8 @@ def plugin_settings(settings):
             "module": "openedx.core.djangoapps.content.course_overviews.models",
             "model": "CourseOverview",
         },
+        "external_id": {
+            "module": "openedx.core.djangoapps.external_user_ids.models",
+            "model": "ExternalId",
+        },
     }
