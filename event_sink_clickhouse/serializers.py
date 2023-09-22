@@ -64,6 +64,7 @@ class UserProfileSerializer(BaseSinkSerializer, serializers.ModelSerializer):
 
 class UserExternalIDSerializer(BaseSinkSerializer, serializers.ModelSerializer):
     """Serializer for user external ID events."""
+
     external_id_type = serializers.CharField(source="external_id_type.name")
     username = serializers.CharField(source="user.username")
 
@@ -114,7 +115,9 @@ class CourseOverviewSerializer(BaseSinkSerializer, serializers.ModelSerializer):
         json_fields = {
             "advertised_start": getattr(overview, "advertised_start", ""),
             "announcement": getattr(overview, "announcement", ""),
-            "lowest_passing_grade": float(getattr(overview, "lowest_passing_grade", 0.0)),
+            "lowest_passing_grade": float(
+                getattr(overview, "lowest_passing_grade", 0.0)
+            ),
             "invitation_only": getattr(overview, "invitation_only", ""),
             "max_student_enrollments_allowed": getattr(
                 overview, "max_student_enrollments_allowed", None
