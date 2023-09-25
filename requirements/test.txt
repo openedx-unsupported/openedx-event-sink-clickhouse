@@ -93,7 +93,7 @@ edx-django-utils==5.7.0
     # via
     #   -r requirements/base.txt
     #   edx-toggles
-edx-opaque-keys==2.5.0
+edx-opaque-keys==2.5.1
     # via -r requirements/base.txt
 edx-toggles==5.1.0
     # via -r requirements/base.txt
@@ -203,9 +203,9 @@ tomli==2.0.1
     # via
     #   coverage
     #   pytest
-types-pyyaml==6.0.12.11
+types-pyyaml==6.0.12.12
     # via responses
-typing-extensions==4.7.1
+typing-extensions==4.8.0
     # via
     #   -r requirements/base.txt
     #   asgiref
@@ -216,7 +216,7 @@ tzdata==2023.3
     #   -r requirements/base.txt
     #   backports-zoneinfo
     #   celery
-urllib3==2.0.4
+urllib3==2.0.5
     # via
     #   -r requirements/base.txt
     #   requests
