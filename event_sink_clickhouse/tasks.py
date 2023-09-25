@@ -67,5 +67,6 @@ def dump_data_to_clickhouse(
     """
     Sink = getattr(import_module(sink_module), sink_name)
 
-    sink = Sink(connection_overrides=connection_overrides, log=celery_log)
-    sink.dump(object_id)
+    if Sink.is_enabled():
+        sink = Sink(connection_overrides=connection_overrides, log=celery_log)
+        sink.dump(object_id)
