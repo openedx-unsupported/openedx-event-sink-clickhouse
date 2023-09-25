@@ -12,7 +12,7 @@ asgiref==3.7.2
     # via
     #   -r requirements/quality.txt
     #   django
-astroid==2.15.6
+astroid==2.15.7
     # via
     #   -r requirements/quality.txt
     #   pylint
@@ -130,7 +130,7 @@ edx-i18n-tools==1.2.0
     # via -r requirements/dev.in
 edx-lint==5.3.4
     # via -r requirements/quality.txt
-edx-opaque-keys==2.5.0
+edx-opaque-keys==2.5.1
     # via -r requirements/quality.txt
 edx-toggles==5.1.0
     # via -r requirements/quality.txt
@@ -351,11 +351,11 @@ tox==3.28.0
     #   tox-battery
 tox-battery==0.6.2
     # via -r requirements/ci.txt
-types-pyyaml==6.0.12.11
+types-pyyaml==6.0.12.12
     # via
     #   -r requirements/quality.txt
     #   responses
-typing-extensions==4.7.1
+typing-extensions==4.8.0
     # via
     #   -r requirements/quality.txt
     #   asgiref
@@ -368,7 +368,7 @@ tzdata==2023.3
     #   -r requirements/quality.txt
     #   backports-zoneinfo
     #   celery
-urllib3==2.0.4
+urllib3==2.0.5
     # via
     #   -r requirements/quality.txt
     #   requests
@@ -395,7 +395,7 @@ wrapt==1.15.0
     # via
     #   -r requirements/quality.txt
     #   astroid
-zipp==3.16.2
+zipp==3.17.0
     # via
     #   -r requirements/pip-tools.txt
     #   importlib-metadata
