@@ -69,7 +69,6 @@ class XBlockSink(ModelBaseSink):
         """
         Serialize an XBlock into a dict
         """
-        print(item)
         course_key = CourseKey.from_string(item["course_key"])
         modulestore = get_modulestore()
         detached_xblock_types = get_detached_xblock_types()
@@ -94,8 +93,6 @@ class XBlockSink(ModelBaseSink):
                 initial["time_last_dumped"],
             )
 
-            print(fields["xblock_data_json"]["block_type"])
-
             if fields["xblock_data_json"]["block_type"] == "chapter":
                 section_idx += 1
                 subsection_idx = 0
@@ -106,11 +103,9 @@ class XBlockSink(ModelBaseSink):
             elif fields["xblock_data_json"]["block_type"] == "vertical":
                 unit_idx += 1
 
-            fields["xblock_data_json"]["course_tree_location"] = {
-                "section": section_idx,
-                "subsection": subsection_idx,
-                "unit": unit_idx
-            }
+            fields["xblock_data_json"]["section"] = section_idx
+            fields["xblock_data_json"]["subsection"] = subsection_idx
+            fields["xblock_data_json"]["unit"] = unit_idx
 
             fields["xblock_data_json"] = json.dumps(fields["xblock_data_json"])
             location_to_node[
@@ -172,6 +167,7 @@ class XBlockSink(ModelBaseSink):
             "block_type": block_type,
             "detached": 1 if block_type in detached_xblock_types else 0,
             "graded": 1 if getattr(item, "graded", False) else 0,
+            "completion_mode": getattr(item, "completion_mode", ""),
         }
 
         # Core table data, if things change here it's a big deal.

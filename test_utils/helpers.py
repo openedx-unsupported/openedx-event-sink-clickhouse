@@ -52,7 +52,7 @@ class FakeXBlock:
     """
     Fakes the parameters of an XBlock that we care about.
     """
-    def __init__(self, identifier, block_type="vertical", graded=False):
+    def __init__(self, identifier, block_type="vertical", graded=False, completion_mode="unknown"):
         self.block_type = block_type
         self.scope_ids = Mock()
         self.scope_ids.usage_id.course_key = course_key_factory()
@@ -62,6 +62,7 @@ class FakeXBlock:
         self.edited_on = datetime.now()
         self.children = []
         self.graded = graded
+        self.completion_mode = completion_mode
 
     def get_children(self):
         """
@@ -233,6 +234,11 @@ def course_factory():
     # Create some graded blocks at the top level
     for i in range(3):
         course.append(FakeXBlock(f"Graded {i}", graded=True))
+
+    # Create some completable blocks at the top level
+    course.append(FakeXBlock("Completable", completion_mode="completable"))
+    course.append(FakeXBlock("Aggregator", completion_mode="aggregator"))
+    course.append(FakeXBlock("Excluded", completion_mode="excluded"))
 
     return course
 

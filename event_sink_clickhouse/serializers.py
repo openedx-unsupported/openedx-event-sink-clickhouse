@@ -127,7 +127,6 @@ class CourseOverviewSerializer(BaseSinkSerializer, serializers.ModelSerializer):
             "entrance_exam_enabled": getattr(overview, "entrance_exam_enabled", ""),
             "external_id": getattr(overview, "external_id", ""),
             "language": getattr(overview, "language", ""),
-            "course_tree_location": getattr(overview, "language", "{}"),
         }
         return json.dumps(json_fields)
 

@@ -4,7 +4,7 @@ Tests for the course_published sinks.
 import json
 import logging
 from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -238,11 +238,14 @@ def test_xblock_tree_structure(mock_modulestore, mock_detached):
     results = sink.serialize_item(fake_serialized_course_overview, initial=initial_data)
 
     def _check_tree_location(block, expected_section=0, expected_subsection=0, expected_unit=0):
+        """
+        Assert the expected values in certain returned blocks or print useful debug information.
+        """
         try:
             j = json.loads(block["xblock_data_json"])
-            assert j["course_tree_location"]["section"] == expected_section
-            assert j["course_tree_location"]["subsection"] == expected_subsection
-            assert j["course_tree_location"]["unit"] == expected_unit
+            assert j["section"] == expected_section
+            assert j["subsection"] == expected_subsection
+            assert j["unit"] == expected_unit
         except AssertionError as e:
             print(e)
             print(block)
@@ -267,3 +270,49 @@ def test_xblock_tree_structure(mock_modulestore, mock_detached):
     _check_tree_location(results[25], 3, 3, 1)
     _check_tree_location(results[26], 3, 3, 2)
     _check_tree_location(results[27], 3, 3, 3)
+
+
+@patch("event_sink_clickhouse.sinks.course_published.get_detached_xblock_types")
+@patch("event_sink_clickhouse.sinks.course_published.get_modulestore")
+def test_xblock_graded_completable_mode(mock_modulestore, mock_detached):
+    """
+    Test that our grading and completion fields serialize.
+    """
+    # Create a fake course structure with a few fake XBlocks
+    course = course_factory()
+    course_overview = fake_course_overview_factory(modified=datetime.now())
+    mock_modulestore.return_value.get_items.return_value = course
+
+    # Fake the "detached types" list since we can't import it here
+    mock_detached.return_value = mock_detached_xblock_types()
+
+    fake_serialized_course_overview = fake_serialize_fake_course_overview(course_overview)
+    sink = XBlockSink(connection_overrides={}, log=MagicMock())
+
+    # Remove the relationships sink, we're just checking the structure here.
+    sink.serialize_relationships = MagicMock()
+    initial_data = {"dump_id": "xyz", "time_last_dumped": "2023-09-05"}
+    results = sink.serialize_item(fake_serialized_course_overview, initial=initial_data)
+
+    def _check_item_serialized_location(block, expected_graded=0, expected_completion_mode="unknown"):
+        """
+        Assert the expected values in certain returned blocks or print useful debug information.
+        """
+        try:
+            j = json.loads(block["xblock_data_json"])
+            assert j["graded"] == expected_graded
+            assert j["completion_mode"] == expected_completion_mode
+        except AssertionError as e:
+            print(e)
+            print(block)
+            raise
+
+    # These tree indexes are the only ones which should have gradable set
+    _check_item_serialized_location(results[31], 1)
+    _check_item_serialized_location(results[32], 1)
+    _check_item_serialized_location(results[33], 1)
+
+    # These tree indexes are the only ones which should have non-"unknown" completion_modes.
+    _check_item_serialized_location(results[34], 0, "completable")
+    _check_item_serialized_location(results[35], 0, "aggregator")
+    _check_item_serialized_location(results[36], 0, "excluded")
