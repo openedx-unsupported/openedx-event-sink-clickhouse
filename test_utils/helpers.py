@@ -52,8 +52,8 @@ class FakeXBlock:
     """
     Fakes the parameters of an XBlock that we care about.
     """
-    def __init__(self, identifier, detached_block=False, graded=False):
-        self.block_type = "course_info" if detached_block else "vertical"
+    def __init__(self, identifier, block_type="vertical", graded=False):
+        self.block_type = block_type
         self.scope_ids = Mock()
         self.scope_ids.usage_id.course_key = course_key_factory()
         self.scope_ids.block_type = self.block_type
@@ -124,6 +124,40 @@ def fake_course_overview_factory(modified=None):
     )
 
 
+def fake_serialize_fake_course_overview(course_overview):
+    """
+    Return a dict representation of a FakeCourseOverview.
+    """
+    json_fields = {
+        "advertised_start": str(course_overview.advertised_start),
+        "announcement": str(course_overview.announcement),
+        "lowest_passing_grade": float(course_overview.lowest_passing_grade),
+        "invitation_only": course_overview.invitation_only,
+        "max_student_enrollments_allowed": course_overview.max_student_enrollments_allowed,
+        "effort": course_overview.effort,
+        "enable_proctored_exams": course_overview.enable_proctored_exams,
+        "entrance_exam_enabled": course_overview.entrance_exam_enabled,
+        "external_id": course_overview.external_id,
+        "language": course_overview.language,
+    }
+
+    return {
+        "org": course_overview.org,
+        "course_key": str(course_overview.id),
+        "display_name": course_overview.display_name,
+        "course_start": course_overview.start,
+        "course_end": course_overview.end,
+        "enrollment_start": course_overview.enrollment_start,
+        "enrollment_end": course_overview.enrollment_end,
+        "self_paced": course_overview.self_paced,
+        "course_data_json": json.dumps(json_fields),
+        "created": course_overview.created,
+        "modified": course_overview.modified,
+        "dump_id": "",
+        "time_last_dumped": "",
+    }
+
+
 def mock_course_overview():
     """
     Create a fake CourseOverview object that supports just the things we care about.
@@ -170,24 +204,31 @@ def course_factory():
     Return a fake course structure that exercises most of the serialization features.
     """
     # Create a base block
-    top_block = FakeXBlock("top")
+    top_block = FakeXBlock("top", block_type="course")
     course = [top_block, ]
 
-    # Create a few children
+    # Create a few sections
     for i in range(3):
-        block = FakeXBlock(f"Child {i}")
+        block = FakeXBlock(f"Section {i}", block_type="chapter")
         course.append(block)
         top_block.children.append(block)
 
-        # Create grandchildren on some children
+        # Create some subsections
         if i > 0:
-            sub_block = FakeXBlock(f"Grandchild {i}")
-            course.append(sub_block)
-            block.children.append(sub_block)
+            for ii in range(3):
+                sub_block = FakeXBlock(f"Subsection {ii}", block_type="sequential")
+                course.append(sub_block)
+                block.children.append(sub_block)
+
+                for iii in range(3):
+                    # Create some units
+                    unit_block = FakeXBlock(f"Unit {iii}", block_type="vertical")
+                    course.append(unit_block)
+                    sub_block.children.append(unit_block)
 
     # Create some detached blocks at the top level
     for i in range(3):
-        course.append(FakeXBlock(f"Detached {i}", detached_block=True))
+        course.append(FakeXBlock(f"Detached {i}", block_type="course_info"))
 
     # Create some graded blocks at the top level
     for i in range(3):

@@ -4,7 +4,7 @@ Tests for the course_published sinks.
 import json
 import logging
 from datetime import datetime
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 import pytest
 import requests
@@ -13,7 +13,7 @@ from django.test.utils import override_settings
 from responses import matchers
 from responses.registries import OrderedRegistry
 
-from event_sink_clickhouse.sinks.course_published import CourseOverviewSink
+from event_sink_clickhouse.sinks.course_published import CourseOverviewSink, XBlockSink
 from event_sink_clickhouse.tasks import dump_course_to_clickhouse
 from test_utils.helpers import (
     check_block_csv_matcher,
@@ -22,6 +22,7 @@ from test_utils.helpers import (
     course_factory,
     course_str_factory,
     fake_course_overview_factory,
+    fake_serialize_fake_course_overview,
     get_clickhouse_http_params,
     mock_course_overview,
     mock_detached_xblock_types,
@@ -43,34 +44,7 @@ def test_course_publish_success(mock_modulestore, mock_detached, mock_overview, 
     course_overview = fake_course_overview_factory(modified=datetime.now())
     mock_modulestore.return_value.get_items.return_value = course
 
-    json_fields = {
-        "advertised_start": str(course_overview.advertised_start),
-        "announcement": str(course_overview.announcement),
-        "lowest_passing_grade": float(course_overview.lowest_passing_grade),
-        "invitation_only": course_overview.invitation_only,
-        "max_student_enrollments_allowed": course_overview.max_student_enrollments_allowed,
-        "effort": course_overview.effort,
-        "enable_proctored_exams": course_overview.enable_proctored_exams,
-        "entrance_exam_enabled": course_overview.entrance_exam_enabled,
-        "external_id": course_overview.external_id,
-        "language": course_overview.language,
-    }
-
-    mock_serialize_item.return_value = {
-        "org": course_overview.org,
-        "course_key": str(course_overview.id),
-        "display_name": course_overview.display_name,
-        "course_start": course_overview.start,
-        "course_end": course_overview.end,
-        "enrollment_start": course_overview.enrollment_start,
-        "enrollment_end": course_overview.enrollment_end,
-        "self_paced": course_overview.self_paced,
-        "course_data_json": json.dumps(json_fields),
-        "created": course_overview.created,
-        "modified": course_overview.modified,
-        "dump_id": "",
-        "time_last_dumped": "",
-    }
+    mock_serialize_item.return_value = fake_serialize_fake_course_overview(course_overview)
 
     # Fake the "detached types" list since we can't import it here
     mock_detached.return_value = mock_detached_xblock_types()
@@ -129,34 +103,7 @@ def test_course_publish_clickhouse_error(mock_modulestore, mock_detached, mock_o
     course_overview = fake_course_overview_factory(modified=datetime.now())
     mock_overview.return_value.get_from_id.return_value = course_overview
 
-    json_fields = {
-        "advertised_start": str(course_overview.advertised_start),
-        "announcement": str(course_overview.announcement),
-        "lowest_passing_grade": float(course_overview.lowest_passing_grade),
-        "invitation_only": course_overview.invitation_only,
-        "max_student_enrollments_allowed": course_overview.max_student_enrollments_allowed,
-        "effort": course_overview.effort,
-        "enable_proctored_exams": course_overview.enable_proctored_exams,
-        "entrance_exam_enabled": course_overview.entrance_exam_enabled,
-        "external_id": course_overview.external_id,
-        "language": course_overview.language,
-    }
-
-    mock_serialize_item.return_value = {
-        "org": course_overview.org,
-        "course_key": str(course_overview.id),
-        "display_name": course_overview.display_name,
-        "course_start": course_overview.start,
-        "course_end": course_overview.end,
-        "enrollment_start": course_overview.enrollment_start,
-        "enrollment_end": course_overview.enrollment_end,
-        "self_paced": course_overview.self_paced,
-        "course_data_json": json.dumps(json_fields),
-        "created": course_overview.created,
-        "modified": course_overview.modified,
-        "dump_id": "",
-        "time_last_dumped": "",
-    }
+    mock_serialize_item.return_value = fake_serialize_fake_course_overview(course_overview)
 
     # This will raise an exception when we try to post to ClickHouse
     responses.post(
@@ -265,3 +212,58 @@ def test_get_last_dump_time():
     last_published_date = sink.get_last_dumped_timestamp(course_key)
     dt = datetime.strptime(last_published_date, "%Y-%m-%d %H:%M:%S.%f+00:00")
     assert dt
+
+
+@patch("event_sink_clickhouse.sinks.course_published.get_detached_xblock_types")
+@patch("event_sink_clickhouse.sinks.course_published.get_modulestore")
+# pytest:disable=unused-argument
+def test_xblock_tree_structure(mock_modulestore, mock_detached):
+    """
+    Test that our calculations of section/subsection/unit are correct.
+    """
+    # Create a fake course structure with a few fake XBlocks
+    course = course_factory()
+    course_overview = fake_course_overview_factory(modified=datetime.now())
+    mock_modulestore.return_value.get_items.return_value = course
+
+    # Fake the "detached types" list since we can't import it here
+    mock_detached.return_value = mock_detached_xblock_types()
+
+    fake_serialized_course_overview = fake_serialize_fake_course_overview(course_overview)
+    sink = XBlockSink(connection_overrides={}, log=MagicMock())
+
+    # Remove the relationships sink, we're just checking the structure here.
+    sink.serialize_relationships = MagicMock()
+    initial_data = {"dump_id": "xyz", "time_last_dumped": "2023-09-05"}
+    results = sink.serialize_item(fake_serialized_course_overview, initial=initial_data)
+
+    def _check_tree_location(block, expected_section=0, expected_subsection=0, expected_unit=0):
+        try:
+            j = json.loads(block["xblock_data_json"])
+            assert j["course_tree_location"]["section"] == expected_section
+            assert j["course_tree_location"]["subsection"] == expected_subsection
+            assert j["course_tree_location"]["unit"] == expected_unit
+        except AssertionError as e:
+            print(e)
+            print(block)
+            raise
+
+    # The tree has new sections at these indexes
+    _check_tree_location(results[1], 1)
+    _check_tree_location(results[2], 2)
+    _check_tree_location(results[15], 3)
+
+    # The tree has new subsections at these indexes
+    _check_tree_location(results[3], 2, 1)
+    _check_tree_location(results[7], 2, 2)
+    _check_tree_location(results[11], 2, 3)
+    _check_tree_location(results[24], 3, 3)
+
+    # The tree has new units at these indexes
+    _check_tree_location(results[4], 2, 1, 1)
+    _check_tree_location(results[5], 2, 1, 2)
+    _check_tree_location(results[6], 2, 1, 3)
+    _check_tree_location(results[10], 2, 2, 3)
+    _check_tree_location(results[25], 3, 3, 1)
+    _check_tree_location(results[26], 3, 3, 2)
+    _check_tree_location(results[27], 3, 3, 3)
