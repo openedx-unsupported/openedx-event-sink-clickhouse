@@ -79,6 +79,10 @@ class XBlockSink(ModelBaseSink):
         # Serialize the XBlocks to dicts and map them with their location as keys the
         # whole map needs to be completed before we can define relationships
         index = 0
+        section_idx = 0
+        subsection_idx = 0
+        unit_idx = 0
+
         for block in items:
             index += 1
             fields = self.serialize_xblock(
@@ -88,6 +92,22 @@ class XBlockSink(ModelBaseSink):
                 initial["dump_id"],
                 initial["time_last_dumped"],
             )
+
+            if fields["xblock_data_json"]["block_type"] == "chapter":
+                section_idx += 1
+                subsection_idx = 0
+                unit_idx = 0
+            elif fields["xblock_data_json"]["block_type"] == "sequential":
+                subsection_idx += 1
+                unit_idx = 0
+            elif fields["xblock_data_json"]["block_type"] == "vertical":
+                unit_idx += 1
+
+            fields["xblock_data_json"]["section"] = section_idx
+            fields["xblock_data_json"]["subsection"] = subsection_idx
+            fields["xblock_data_json"]["unit"] = unit_idx
+
+            fields["xblock_data_json"] = json.dumps(fields["xblock_data_json"])
             location_to_node[
                 XBlockSink.strip_branch_and_version(block.location)
             ] = fields
@@ -147,6 +167,7 @@ class XBlockSink(ModelBaseSink):
             "block_type": block_type,
             "detached": 1 if block_type in detached_xblock_types else 0,
             "graded": 1 if getattr(item, "graded", False) else 0,
+            "completion_mode": getattr(item, "completion_mode", ""),
         }
 
         # Core table data, if things change here it's a big deal.
@@ -155,7 +176,7 @@ class XBlockSink(ModelBaseSink):
             "course_key": str(course_key),
             "location": str(item.location),
             "display_name": item.display_name_with_default.replace("'", "'"),
-            "xblock_data_json": json.dumps(json_data),
+            "xblock_data_json": json_data,
             "order": index,
             "edited_on": str(getattr(item, "edited_on", "")),
             "dump_id": dump_id,
