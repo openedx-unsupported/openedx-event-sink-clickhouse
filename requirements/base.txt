@@ -38,7 +38,7 @@ click-repl==0.3.0
     # via celery
 code-annotations==1.5.0
     # via edx-toggles
-django==3.2.21
+django==3.2.22
     # via
     #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
     #   -r requirements/base.in
@@ -121,7 +121,7 @@ tzdata==2023.3
     # via
     #   backports-zoneinfo
     #   celery
-urllib3==2.0.5
+urllib3==2.0.6
     # via requests
 vine==5.0.0
     # via

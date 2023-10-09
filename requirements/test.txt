@@ -61,7 +61,7 @@ code-annotations==1.5.0
     #   -r requirements/base.txt
     #   -r requirements/test.in
     #   edx-toggles
-coverage[toml]==7.3.1
+coverage[toml]==7.3.2
     # via pytest-cov
 ddt==1.6.0
     # via -r requirements/test.in
@@ -216,7 +216,7 @@ tzdata==2023.3
     #   -r requirements/base.txt
     #   backports-zoneinfo
     #   celery
-urllib3==2.0.5
+urllib3==2.0.6
     # via
     #   -r requirements/base.txt
     #   requests
