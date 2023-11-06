@@ -36,7 +36,7 @@ cffi==1.16.0
     # via
     #   -r requirements/test.txt
     #   pynacl
-charset-normalizer==3.3.1
+charset-normalizer==3.3.2
     # via
     #   -r requirements/test.txt
     #   requests
@@ -79,7 +79,7 @@ ddt==1.6.0
     # via -r requirements/test.txt
 dill==0.3.7
     # via pylint
-django==3.2.22
+django==3.2.23
     # via
     #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
     #   -r requirements/test.txt
@@ -104,7 +104,7 @@ djangorestframework==3.14.0
     # via
     #   -r requirements/test.txt
     #   django-rest-framework
-edx-django-utils==5.7.0
+edx-django-utils==5.8.0
     # via
     #   -r requirements/test.txt
     #   edx-toggles
@@ -207,7 +207,7 @@ pytest==7.4.3
     #   pytest-django
 pytest-cov==4.1.0
     # via -r requirements/test.txt
-pytest-django==4.5.2
+pytest-django==4.6.0
     # via -r requirements/test.txt
 python-dateutil==2.8.2
     # via
@@ -231,7 +231,7 @@ requests==2.31.0
     # via
     #   -r requirements/test.txt
     #   responses
-responses==0.23.3
+responses==0.24.0
     # via -r requirements/test.txt
 six==1.16.0
     # via
@@ -260,12 +260,8 @@ tomli==2.0.1
     #   coverage
     #   pylint
     #   pytest
-tomlkit==0.12.1
+tomlkit==0.12.2
     # via pylint
-types-pyyaml==6.0.12.12
-    # via
-    #   -r requirements/test.txt
-    #   responses
 typing-extensions==4.8.0
     # via
     #   -r requirements/test.txt
@@ -284,13 +280,13 @@ urllib3==2.0.7
     #   -r requirements/test.txt
     #   requests
     #   responses
-vine==5.0.0
+vine==5.1.0
     # via
     #   -r requirements/test.txt
     #   amqp
     #   celery
     #   kombu
-wcwidth==0.2.8
+wcwidth==0.2.9
     # via
     #   -r requirements/test.txt
     #   prompt-toolkit

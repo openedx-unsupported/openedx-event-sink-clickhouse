@@ -20,7 +20,7 @@ certifi==2023.7.22
     # via requests
 cffi==1.16.0
     # via pynacl
-charset-normalizer==3.3.1
+charset-normalizer==3.3.2
     # via requests
 click==8.1.7
     # via
@@ -38,7 +38,7 @@ click-repl==0.3.0
     # via celery
 code-annotations==1.5.0
     # via edx-toggles
-django==3.2.22
+django==3.2.23
     # via
     #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
     #   -r requirements/base.in
@@ -59,7 +59,7 @@ django-waffle==4.0.0
     #   edx-toggles
 djangorestframework==3.14.0
     # via django-rest-framework
-edx-django-utils==5.7.0
+edx-django-utils==5.8.0
     # via
     #   -r requirements/base.in
     #   edx-toggles
@@ -123,10 +123,10 @@ tzdata==2023.3
     #   celery
 urllib3==2.0.7
     # via requests
-vine==5.0.0
+vine==5.1.0
     # via
     #   amqp
     #   celery
     #   kombu
-wcwidth==0.2.8
+wcwidth==0.2.9
     # via prompt-toolkit
