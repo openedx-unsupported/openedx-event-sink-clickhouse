@@ -19,6 +19,10 @@ def plugin_settings(settings):
     }
 
     settings.EVENT_SINK_CLICKHOUSE_MODEL_CONFIG = {
+        "auth_user": {
+            "module": "django.contrib.auth.models",
+            "model": "User",
+        },
         "user_profile": {
             "module": "common.djangoapps.student.models",
             "model": "UserProfile",

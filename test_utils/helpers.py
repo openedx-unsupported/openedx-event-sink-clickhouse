@@ -47,6 +47,8 @@ FakeCourseOverview = namedtuple("FakeCourseOverview", [
     "language",
 ])
 
+FakeUser = namedtuple("FakeUser", ["id"])
+
 
 class FakeXBlock:
     """
