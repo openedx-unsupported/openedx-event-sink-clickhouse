@@ -27,6 +27,8 @@ billiard==4.2.0
     # via
     #   -r requirements/quality.txt
     #   celery
+black==23.11.0
+    # via -r requirements/dev.in
 build==1.0.3
     # via
     #   -r requirements/pip-tools.txt
@@ -58,6 +60,7 @@ click==8.1.7
     # via
     #   -r requirements/pip-tools.txt
     #   -r requirements/quality.txt
+    #   black
     #   celery
     #   click-didyoumean
     #   click-log
@@ -191,6 +194,8 @@ mccabe==0.7.0
     # via
     #   -r requirements/quality.txt
     #   pylint
+mypy-extensions==1.0.0
+    # via black
 newrelic==9.2.0
     # via
     #   -r requirements/quality.txt
@@ -200,12 +205,15 @@ packaging==23.2
     #   -r requirements/ci.txt
     #   -r requirements/pip-tools.txt
     #   -r requirements/quality.txt
+    #   black
     #   build
     #   pyproject-api
     #   pytest
     #   tox
 path==16.7.1
     # via edx-i18n-tools
+pathspec==0.11.2
+    # via black
 pbr==6.0.0
     # via
     #   -r requirements/quality.txt
@@ -217,6 +225,7 @@ platformdirs==3.11.0
     #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
     #   -r requirements/ci.txt
     #   -r requirements/quality.txt
+    #   black
     #   pylint
     #   tox
     #   virtualenv
@@ -345,6 +354,7 @@ tomli==2.0.1
     #   -r requirements/ci.txt
     #   -r requirements/pip-tools.txt
     #   -r requirements/quality.txt
+    #   black
     #   build
     #   coverage
     #   pip-tools
