@@ -135,7 +135,7 @@ djangorestframework==3.14.0
     # via
     #   -r requirements/quality.txt
     #   django-rest-framework
-edx-django-utils==5.8.0
+edx-django-utils==5.9.0
     # via
     #   -r requirements/quality.txt
     #   edx-toggles
@@ -160,7 +160,7 @@ idna==3.6
     # via
     #   -r requirements/quality.txt
     #   requests
-importlib-metadata==6.8.0
+importlib-metadata==7.0.0
     # via
     #   -r requirements/pip-tools.txt
     #   build
@@ -357,7 +357,7 @@ tomlkit==0.12.3
     # via
     #   -r requirements/quality.txt
     #   pylint
-tox==4.11.3
+tox==4.11.4
     # via -r requirements/ci.txt
 typing-extensions==4.8.0
     # via
@@ -383,7 +383,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-virtualenv==20.24.7
+virtualenv==20.25.0
     # via
     #   -r requirements/ci.txt
     #   tox
