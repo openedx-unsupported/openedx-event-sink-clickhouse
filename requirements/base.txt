@@ -59,7 +59,7 @@ django-waffle==4.0.0
     #   edx-toggles
 djangorestframework==3.14.0
     # via django-rest-framework
-edx-django-utils==5.8.0
+edx-django-utils==5.9.0
     # via
     #   -r requirements/base.in
     #   edx-toggles
