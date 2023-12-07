@@ -4,6 +4,7 @@ Tests for the user_retire sinks.
 from unittest.mock import patch
 
 import responses
+from django.test.utils import override_settings
 from responses.registries import OrderedRegistry
 
 from event_sink_clickhouse.sinks.user_retire import UserRetirementSink
@@ -14,6 +15,7 @@ from test_utils.helpers import FakeUser
 @responses.activate(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
     registry=OrderedRegistry
 )
+@override_settings(EVENT_SINK_CLICKHOUSE_PII_MODELS=["user_profile", "external_id"])
 @patch("event_sink_clickhouse.sinks.user_retire.UserRetirementSink.serialize_item")
 @patch("event_sink_clickhouse.sinks.user_retire.UserRetirementSink.is_enabled")
 @patch("event_sink_clickhouse.sinks.user_retire.UserRetirementSink.get_model")

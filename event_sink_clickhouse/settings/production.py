@@ -11,3 +11,7 @@ def plugin_settings(settings):
         "EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG",
         settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG,
     )
+    settings.EVENT_SINK_CLICKHOUSE_PII_MODELS = settings.ENV_TOKENS.get(
+        "EVENT_SINK_CLICKHOUSE_PII_MODELS",
+        settings.EVENT_SINK_CLICKHOUSE_PII_MODELS,
+    )

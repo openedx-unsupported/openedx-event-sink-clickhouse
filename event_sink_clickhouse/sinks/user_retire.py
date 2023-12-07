@@ -1,5 +1,6 @@
 """User retirement sink"""
 import requests
+from django.conf import settings
 
 from event_sink_clickhouse.serializers import UserRetirementSerializer
 from event_sink_clickhouse.sinks.base_sink import ModelBaseSink
@@ -12,7 +13,9 @@ class UserRetirementSink(ModelBaseSink):  # pylint: disable=abstract-method
 
     model = "auth_user"
     unique_key = "id"
-    clickhouse_table_name = ["user_profile", "external_id"]
+    clickhouse_table_name = (
+        "dummy"  # uses settings.EVENT_SINK_CLICKHOUSE_PII_MODELS instead
+    )
     timestamp_field = "modified"
     name = "User Retirement"
     serializer_class = UserRetirementSerializer
@@ -26,8 +29,11 @@ class UserRetirementSink(ModelBaseSink):  # pylint: disable=abstract-method
         users = serialized_item if many else [serialized_item]
         user_ids = {str(user["user_id"]) for user in users}
         user_ids_str = ",".join(user_ids)
+        clickhouse_pii_tables = getattr(
+            settings, "EVENT_SINK_CLICKHOUSE_PII_MODELS", []
+        )
 
-        for table in self.clickhouse_table_name:
+        for table in clickhouse_pii_tables:
             params = {
                 "query": f"ALTER TABLE {self.ch_database}.{table} DELETE WHERE user_id in ({user_ids_str})",
             }
