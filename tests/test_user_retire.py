@@ -1,6 +1,7 @@
 """
 Tests for the user_retire sinks.
 """
+import logging
 from unittest.mock import patch
 
 import responses
@@ -10,6 +11,8 @@ from responses.registries import OrderedRegistry
 from event_sink_clickhouse.sinks.user_retire import UserRetirementSink
 from event_sink_clickhouse.tasks import dump_data_to_clickhouse
 from test_utils.helpers import FakeUser
+
+log = logging.getLogger(__name__)
 
 
 @responses.activate(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
@@ -64,3 +67,39 @@ def test_retire_user(mock_user_model, mock_is_enabled, mock_serialize_item):
     assert mock_serialize_item.call_count == 1
     assert user_profile_delete.call_count == 1
     assert external_id_delete.call_count == 1
+
+
+@responses.activate(  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+    registry=OrderedRegistry
+)
+@override_settings(EVENT_SINK_CLICKHOUSE_PII_MODELS=["user_profile"])
+@patch("event_sink_clickhouse.sinks.user_retire.UserRetirementSink.serialize_item")
+def test_retire_many_users(mock_serialize_item):
+    """
+    Test of a successful "many users" retirement.
+    """
+    # Create and serialize a few fake users
+    users = (FakeUser(246), FakeUser(22), FakeUser(91))
+    mock_serialize_item.return_value = [{"user_id": user.id} for user in users]
+
+    # Use the responses library to catch the POSTs to ClickHouse
+    # and match them against the expected values
+    user_profile_delete = responses.post(
+        "https://foo.bar/",
+        match=[
+            responses.matchers.query_param_matcher(
+                {
+                    "query": "ALTER TABLE cool_data.user_profile DELETE WHERE user_id in (22,246,91)",
+                }
+            )
+        ],
+    )
+
+    sink = UserRetirementSink(None, log)
+    sink.dump(
+        item_id=users[0].id,
+        many=True,
+    )
+
+    assert mock_serialize_item.call_count == 1
+    assert user_profile_delete.call_count == 1

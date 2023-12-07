@@ -26,9 +26,12 @@ class UserRetirementSink(ModelBaseSink):  # pylint: disable=abstract-method
 
         Send delete queries to remove the serialized User from ClickHouse.
         """
-        users = serialized_item if many else [serialized_item]
+        if many:
+            users = serialized_item
+        else:
+            users = [serialized_item]
         user_ids = {str(user["user_id"]) for user in users}
-        user_ids_str = ",".join(user_ids)
+        user_ids_str = ",".join(sorted(user_ids))
         clickhouse_pii_tables = getattr(
             settings, "EVENT_SINK_CLICKHOUSE_PII_MODELS", []
         )
