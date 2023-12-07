@@ -18,7 +18,16 @@ def plugin_settings(settings):
         "timeout_secs": 5,
     }
 
+    settings.EVENT_SINK_CLICKHOUSE_PII_MODELS = [
+        "user_profile",
+        "external_id",
+    ]
+
     settings.EVENT_SINK_CLICKHOUSE_MODEL_CONFIG = {
+        "auth_user": {
+            "module": "django.contrib.auth.models",
+            "model": "User",
+        },
         "user_profile": {
             "module": "common.djangoapps.student.models",
             "model": "UserProfile",

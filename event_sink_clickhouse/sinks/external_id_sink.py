@@ -3,7 +3,7 @@ from event_sink_clickhouse.serializers import UserExternalIDSerializer
 from event_sink_clickhouse.sinks.base_sink import ModelBaseSink
 
 
-class ExternalIDSInk(ModelBaseSink):  # pylint: disable=abstract-method
+class ExternalIdSink(ModelBaseSink):  # pylint: disable=abstract-method
     """
     Sink for user external ID serializer
     """

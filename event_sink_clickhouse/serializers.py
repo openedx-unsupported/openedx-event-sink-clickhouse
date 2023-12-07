@@ -82,6 +82,20 @@ class UserExternalIDSerializer(BaseSinkSerializer, serializers.ModelSerializer):
         ]
 
 
+class UserRetirementSerializer(BaseSinkSerializer, serializers.ModelSerializer):
+    """Serializer for user retirement events."""
+
+    user_id = serializers.CharField(source="id")
+
+    class Meta:
+        """Meta class for user retirement serializer."""
+
+        model = get_model("auth_user")
+        fields = [
+            "user_id",
+        ]
+
+
 class CourseOverviewSerializer(BaseSinkSerializer, serializers.ModelSerializer):
     """Serializer for course overview events."""
 
