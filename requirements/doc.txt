@@ -174,11 +174,11 @@ mdurl==0.1.2
     # via markdown-it-py
 more-itertools==10.1.0
     # via jaraco-classes
-newrelic==9.2.0
+newrelic==9.3.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
-nh3==0.2.14
+nh3==0.2.15
     # via readme-renderer
 packaging==23.2
     # via
@@ -330,7 +330,7 @@ tomli==2.0.1
     #   pytest
 twine==4.0.2
     # via -r requirements/doc.in
-typing-extensions==4.8.0
+typing-extensions==4.9.0
     # via
     #   -r requirements/test.txt
     #   asgiref
