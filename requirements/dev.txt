@@ -8,6 +8,10 @@ amqp==5.2.0
     # via
     #   -r requirements/quality.txt
     #   kombu
+annotated-types==0.6.0
+    # via
+    #   -r requirements/quality.txt
+    #   pydantic
 asgiref==3.7.2
     # via
     #   -r requirements/quality.txt
@@ -39,6 +43,10 @@ cachetools==5.3.2
     #   tox
 celery==5.3.6
     # via -r requirements/quality.txt
+cerberus==1.3.5
+    # via
+    #   -r requirements/quality.txt
+    #   plette
 certifi==2023.11.17
     # via
     #   -r requirements/quality.txt
@@ -111,6 +119,8 @@ dill==0.3.7
 distlib==0.3.7
     # via
     #   -r requirements/ci.txt
+    #   -r requirements/quality.txt
+    #   requirementslib
     #   virtualenv
 django==3.2.23
     # via
@@ -138,6 +148,10 @@ djangorestframework==3.14.0
     # via
     #   -r requirements/quality.txt
     #   django-rest-framework
+docopt==0.6.2
+    # via
+    #   -r requirements/quality.txt
+    #   pipreqs
 edx-django-utils==5.9.0
     # via
     #   -r requirements/quality.txt
@@ -171,7 +185,7 @@ iniconfig==2.0.0
     # via
     #   -r requirements/quality.txt
     #   pytest
-isort==5.12.0
+isort==5.13.0
     # via
     #   -r requirements/quality.txt
     #   pylint
@@ -196,7 +210,7 @@ mccabe==0.7.0
     #   pylint
 mypy-extensions==1.0.0
     # via black
-newrelic==9.2.0
+newrelic==9.3.0
     # via
     #   -r requirements/quality.txt
     #   edx-django-utils
@@ -210,25 +224,42 @@ packaging==23.2
     #   pyproject-api
     #   pytest
     #   tox
-path==16.7.1
+path==16.9.0
     # via edx-i18n-tools
-pathspec==0.11.2
+pathspec==0.12.1
     # via black
 pbr==6.0.0
     # via
     #   -r requirements/quality.txt
     #   stevedore
+pep517==0.13.1
+    # via
+    #   -r requirements/quality.txt
+    #   requirementslib
+pip-api==0.0.30
+    # via
+    #   -r requirements/quality.txt
+    #   isort
 pip-tools==7.3.0
     # via -r requirements/pip-tools.txt
-platformdirs==3.11.0
+pipreqs==0.4.13
     # via
-    #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
+    #   -r requirements/quality.txt
+    #   isort
+platformdirs==4.1.0
+    # via
     #   -r requirements/ci.txt
     #   -r requirements/quality.txt
     #   black
     #   pylint
+    #   requirementslib
     #   tox
     #   virtualenv
+plette[validation]==0.4.4
+    # via
+    #   -r requirements/quality.txt
+    #   plette
+    #   requirementslib
 pluggy==1.3.0
     # via
     #   -r requirements/ci.txt
@@ -252,6 +283,14 @@ pycparser==2.21
     # via
     #   -r requirements/quality.txt
     #   cffi
+pydantic==2.5.2
+    # via
+    #   -r requirements/quality.txt
+    #   requirementslib
+pydantic-core==2.14.5
+    # via
+    #   -r requirements/quality.txt
+    #   pydantic
 pydocstyle==6.3.0
     # via -r requirements/quality.txt
 pygments==2.17.2
@@ -323,7 +362,13 @@ pyyaml==6.0.1
 requests==2.31.0
     # via
     #   -r requirements/quality.txt
+    #   requirementslib
     #   responses
+    #   yarg
+requirementslib==3.0.0
+    # via
+    #   -r requirements/quality.txt
+    #   isort
 responses==0.24.1
     # via -r requirements/quality.txt
 six==1.16.0
@@ -357,6 +402,7 @@ tomli==2.0.1
     #   black
     #   build
     #   coverage
+    #   pep517
     #   pip-tools
     #   pylint
     #   pyproject-api
@@ -366,16 +412,22 @@ tomli==2.0.1
 tomlkit==0.12.3
     # via
     #   -r requirements/quality.txt
+    #   plette
     #   pylint
+    #   requirementslib
 tox==4.11.4
     # via -r requirements/ci.txt
-typing-extensions==4.8.0
+typing-extensions==4.9.0
     # via
     #   -r requirements/quality.txt
+    #   annotated-types
     #   asgiref
     #   astroid
+    #   black
     #   edx-opaque-keys
     #   kombu
+    #   pydantic
+    #   pydantic-core
     #   pylint
 tzdata==2023.3
     # via
@@ -405,6 +457,10 @@ wheel==0.42.0
     # via
     #   -r requirements/pip-tools.txt
     #   pip-tools
+yarg==0.1.9
+    # via
+    #   -r requirements/quality.txt
+    #   pipreqs
 zipp==3.17.0
     # via
     #   -r requirements/pip-tools.txt
