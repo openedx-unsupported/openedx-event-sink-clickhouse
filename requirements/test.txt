@@ -62,7 +62,7 @@ code-annotations==1.5.0
     #   -r requirements/base.txt
     #   -r requirements/test.in
     #   edx-toggles
-coverage[toml]==7.3.3
+coverage[toml]==7.3.4
     # via
     #   coverage
     #   pytest-cov
