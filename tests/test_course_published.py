@@ -18,7 +18,6 @@ from event_sink_clickhouse.tasks import dump_course_to_clickhouse
 from test_utils.helpers import (
     check_block_csv_matcher,
     check_overview_csv_matcher,
-    check_relationship_csv_matcher,
     course_factory,
     course_str_factory,
     fake_course_overview_factory,
@@ -54,20 +53,13 @@ def test_course_publish_success(mock_modulestore, mock_detached, mock_overview, 
     # Use the responses library to catch the POSTs to ClickHouse
     # and match them against the expected values, including CSV
     # content
-    course_overview_params, blocks_params, relationships_params = get_clickhouse_http_params()
+    course_overview_params, blocks_params = get_clickhouse_http_params()
 
     responses.post(
         "https://foo.bar/",
         match=[
             matchers.query_param_matcher(course_overview_params),
             check_overview_csv_matcher(course_overview)
-        ],
-    )
-    responses.post(
-        "https://foo.bar/",
-        match=[
-            matchers.query_param_matcher(relationships_params),
-            check_relationship_csv_matcher(course)
         ],
     )
     responses.post(
@@ -232,8 +224,6 @@ def test_xblock_tree_structure(mock_modulestore, mock_detached):
     fake_serialized_course_overview = fake_serialize_fake_course_overview(course_overview)
     sink = XBlockSink(connection_overrides={}, log=MagicMock())
 
-    # Remove the relationships sink, we're just checking the structure here.
-    sink.serialize_relationships = MagicMock()
     initial_data = {"dump_id": "xyz", "time_last_dumped": "2023-09-05"}
     results = sink.serialize_item(fake_serialized_course_overview, initial=initial_data)
 
@@ -289,8 +279,6 @@ def test_xblock_graded_completable_mode(mock_modulestore, mock_detached):
     fake_serialized_course_overview = fake_serialize_fake_course_overview(course_overview)
     sink = XBlockSink(connection_overrides={}, log=MagicMock())
 
-    # Remove the relationships sink, we're just checking the structure here.
-    sink.serialize_relationships = MagicMock()
     initial_data = {"dump_id": "xyz", "time_last_dumped": "2023-09-05"}
     results = sink.serialize_item(fake_serialized_course_overview, initial=initial_data)
 

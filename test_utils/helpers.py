@@ -14,8 +14,6 @@ from unittest.mock import MagicMock, Mock
 from opaque_keys.edx.keys import CourseKey
 from opaque_keys.edx.locator import BlockUsageLocator
 
-from event_sink_clickhouse.sinks.course_published import XBlockSink
-
 ORIG_IMPORT = __import__
 ORG = "testorg"
 COURSE = "testcourse"
@@ -193,13 +191,8 @@ def get_clickhouse_http_params():
         "input_format_allow_errors_ratio": 0.1,
         "query": "INSERT INTO cool_data.course_blocks FORMAT CSV"
     }
-    relationships_params = {
-        "input_format_allow_errors_num": 1,
-        "input_format_allow_errors_ratio": 0.1,
-        "query": "INSERT INTO cool_data.course_relationships FORMAT CSV"
-    }
 
-    return overview_params, blocks_params, relationships_params
+    return overview_params, blocks_params
 
 
 def course_factory():
@@ -337,49 +330,6 @@ def check_block_csv_matcher(course):
                 assert block_json_data["course"] == csv_json["course"]
                 assert block_json_data["run"] == csv_json["run"]
                 assert block_json_data["block_type"] == csv_json["block_type"]
-                i += 1
-        except AssertionError as e:
-            return False, f"Mismatch in row {i}: {e}"
-        return True, ""
-    return match
-
-
-def check_relationship_csv_matcher(course):
-    """
-    Match the relationship CSV against the test course.
-
-    This is a matcher for the "responses" library. It returns a function
-    that actually does the matching.
-    """
-    # Build our own copy of the test relationships first
-    relationships = []
-    for block in course:
-        course_key = str(block.location.course_key)
-        for _, child in enumerate(block.get_children()):
-            parent_node = str(XBlockSink.strip_branch_and_version(block.location))
-            child_node = str(XBlockSink.strip_branch_and_version(child.location))
-            relationships.append((course_key, parent_node, child_node))
-
-    def match(request):
-        body = request.body.decode("utf-8")
-        lines = body.split("\n")[:-1]
-
-        # The relationships CSV should have the same number of relationships as our test
-        if len(lines) != len(relationships):
-            return False, f"Body has {len(lines)} lines but there are {len(relationships)} relationships"
-
-        f = StringIO(body)
-        reader = csv.reader(f)
-
-        i = 0
-        try:
-            # The CSV should be in the same order as our relationships, make sure
-            # everything matches
-            for row in reader:
-                relation = relationships[i]
-                assert row[0] == relation[0]
-                assert row[1] == relation[1]
-                assert row[2] == relation[2]
                 i += 1
         except AssertionError as e:
             return False, f"Mismatch in row {i}: {e}"
