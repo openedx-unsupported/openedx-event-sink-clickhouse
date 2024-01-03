@@ -4,7 +4,6 @@ Base classes for event sinks
 import csv
 import datetime
 import io
-import json
 from collections import namedtuple
 
 import requests
@@ -52,27 +51,16 @@ class BaseSink:
                 "timeout_secs", self.ch_timeout_secs
             )
 
-    def _send_clickhouse_request(self, request, expected_insert_rows=None):
+    def _send_clickhouse_request(self, request):
         """
         Perform the actual HTTP requests to ClickHouse.
         """
         session = requests.Session()
         prepared_request = request.prepare()
-        response = None
 
         try:
             response = session.send(prepared_request, timeout=self.ch_timeout_secs)
             response.raise_for_status()
-
-            if expected_insert_rows:
-                summary = response.headers["X-ClickHouse-Summary"]
-                written_rows = json.loads(summary)["written_rows"]
-                if expected_insert_rows != int(written_rows):
-                    self.log.error(
-                        f"Clickhouse query {prepared_request.url} expected {expected_insert_rows} "
-                        f"rows to be inserted, but only got {written_rows}!"
-                    )
-
             return response
         except requests.exceptions.HTTPError as e:
             self.log.error(str(e))
@@ -80,10 +68,6 @@ class BaseSink:
             self.log.error(e.response)
             self.log.error(e.response.text)
             raise
-        except (requests.exceptions.InvalidJSONError, KeyError):
-            # ClickHouse can be configured not to return the metadata / summary we check above for
-            # performance reasons. It's not critical, so we eat those here.
-            return response
 
 
 class ModelBaseSink(BaseSink):
@@ -286,9 +270,7 @@ class ModelBaseSink(BaseSink):
             auth=self.ch_auth,
         )
 
-        self._send_clickhouse_request(
-            request, expected_insert_rows=len(serialized_item) if many else 1
-        )
+        self._send_clickhouse_request(request)
 
     def fetch_target_items(self, ids=None, skip_ids=None, force_dump=False):
         """

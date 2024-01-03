@@ -1,7 +1,6 @@
 """
 Tests for the base sinks.
 """
-import json
 import logging
 from unittest.mock import MagicMock, Mock, patch
 
@@ -9,7 +8,7 @@ import ddt
 from django.test import TestCase
 from django.test.utils import override_settings
 
-from event_sink_clickhouse.sinks.base_sink import BaseSink, ModelBaseSink
+from event_sink_clickhouse.sinks.base_sink import ModelBaseSink
 
 
 class ChildSink(ModelBaseSink):  # pylint: disable=abstract-method
@@ -148,8 +147,7 @@ class TestModelBaseSink(TestCase):
             auth=self.child_sink.ch_auth,
         )
         self.child_sink._send_clickhouse_request(  # pylint: disable=protected-access
-            mock_requests.Request.return_value,
-            expected_insert_rows=len(serialized_items),
+            mock_requests.Request.return_value
         )
 
     def test_init(self):
@@ -245,57 +243,3 @@ class TestModelBaseSink(TestCase):
         Test that is_enable() returns the correct data.
         """
         self.assertEqual(self.child_sink.is_enabled(), True)
-
-    @patch("requests.Session.send")
-    def test_expected_insert_rows_mismatch(self, mock_send):
-        mock_response = Mock()
-        mock_response.headers = {
-            "X-ClickHouse-Summary": json.dumps({"written_rows": 5})
-        }
-        mock_send.return_value = mock_response
-
-        connection_overrides = {
-            "url": "mocked_url",
-            "username": "mocked_username",
-            "password": "mocked_password",
-            "database": "mocked_database",
-            "timeout_secs": 5,
-        }
-
-        mock_log = Mock(error=Mock())
-
-        base_sink_instance = BaseSink(connection_overrides, log=mock_log)
-        request = Mock()
-        request.prepare.return_value = Mock()
-
-        base_sink_instance._send_clickhouse_request(  # pylint: disable=protected-access
-            request, expected_insert_rows=10
-        )
-        mock_log.error.assert_called_once()
-
-    @patch("requests.Session.send")
-    def test_expected_insert_rows_match(self, mock_send):
-        mock_response = Mock()
-        mock_response.headers = {
-            "X-ClickHouse-Summary": json.dumps({"written_rows": 8})
-        }
-        mock_send.return_value = mock_response
-
-        connection_overrides = {
-            "url": "mocked_url",
-            "username": "mocked_username",
-            "password": "mocked_password",
-            "database": "mocked_database",
-            "timeout_secs": 5,
-        }
-
-        mock_log = Mock()
-
-        base_sink_instance = BaseSink(connection_overrides, log=mock_log)
-        request = Mock()
-        request.prepare.return_value = Mock()
-
-        response = base_sink_instance._send_clickhouse_request(  # pylint: disable=protected-access
-            request, expected_insert_rows=8
-        )
-        self.assertEqual(response, mock_response)
