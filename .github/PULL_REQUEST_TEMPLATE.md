@@ -16,15 +16,10 @@ instructions.
 3. Expect C to happen
 4. If D happened instead - check failed.
 
-**Reviewers:**
-- [ ] tag reviewer
-- [ ] tag reviewer
-
 **Merge checklist:**
 - [ ] All reviewers approved
 - [ ] CI build is green
 - [ ] Version bumped
-- [ ] Changelog record added
 - [ ] Documentation updated (not only docstrings)
 - [ ] Commits are squashed
 
