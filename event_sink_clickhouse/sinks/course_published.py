@@ -3,7 +3,7 @@ Handler for the CMS COURSE_PUBLISHED event
 
 Does the following:
 - Pulls the course structure from modulestore
-- Serialize the xblocks and their parent/child relationships
+- Serialize the xblocks
 - Sends them to ClickHouse in CSV format
 
 Note that the serialization format does not include all fields as there may be things like
@@ -23,27 +23,6 @@ CLICKHOUSE_BULK_INSERT_PARAMS = {
     "input_format_allow_errors_num": 1,
     "input_format_allow_errors_ratio": 0.1,
 }
-
-
-class XBlockRelationshipSink(ModelBaseSink):
-    """
-    Sink for XBlock relationships
-    """
-
-    clickhouse_table_name = "course_relationships"
-    name = "XBlock Relationships"
-    timestamp_field = "time_last_dumped"
-    unique_key = "parent_location"
-
-    def dump_related(self, serialized_item, dump_id, time_last_dumped):
-        self.dump(
-            serialized_item,
-            many=True,
-            initial={"dump_id": dump_id, "time_last_dumped": time_last_dumped},
-        )
-
-    def serialize_item(self, item, many=False, initial=None):
-        return item
 
 
 class XBlockSink(ModelBaseSink):
@@ -112,45 +91,7 @@ class XBlockSink(ModelBaseSink):
                 XBlockSink.strip_branch_and_version(block.location)
             ] = fields
 
-        nodes = list(location_to_node.values())
-
-        self.serialize_relationships(
-            items,
-            location_to_node,
-            course_key,
-            initial["dump_id"],
-            initial["time_last_dumped"],
-        )
-
-        return nodes
-
-    def serialize_relationships(
-        self, items, location_to_node, course_id, dump_id, dump_timestamp
-    ):
-        """Serialize the relationships between XBlocks"""
-        relationships = []
-        for item in items:
-            for index, child in enumerate(item.get_children()):
-                parent_node = location_to_node.get(
-                    XBlockSink.strip_branch_and_version(item.location)
-                )
-                child_node = location_to_node.get(
-                    XBlockSink.strip_branch_and_version(child.location)
-                )
-
-                if parent_node is not None and child_node is not None:  # pragma: no cover
-                    relationship = {
-                        "course_key": str(course_id),
-                        "parent_location": str(parent_node["location"]),
-                        "child_location": str(child_node["location"]),
-                        "order": index,
-                        "dump_id": dump_id,
-                        "time_last_dumped": dump_timestamp,
-                    }
-                    relationships.append(relationship)
-        XBlockRelationshipSink(self.connection_overrides, self.log).dump_related(
-            relationships, dump_id, dump_timestamp
-        )
+        return list(location_to_node.values())
 
     def serialize_xblock(
         self, item, index, detached_xblock_types, dump_id, time_last_dumped

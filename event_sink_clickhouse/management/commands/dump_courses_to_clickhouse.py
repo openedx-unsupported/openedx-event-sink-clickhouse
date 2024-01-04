@@ -97,7 +97,7 @@ def dump_target_courses_to_clickhouse(
 
 class Command(BaseCommand):
     """
-    Dump course block and relationship data to a ClickHouse instance.
+    Dump course block data to a ClickHouse instance.
     """
 
     help = dedent(__doc__).strip()

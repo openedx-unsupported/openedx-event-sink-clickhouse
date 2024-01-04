@@ -46,7 +46,4 @@ class UserRetirementSink(ModelBaseSink):  # pylint: disable=abstract-method
                 params=params,
                 auth=self.ch_auth,
             )
-            self._send_clickhouse_request(
-                request,
-                expected_insert_rows=0,  # DELETE requests don't return a row count
-            )
+            self._send_clickhouse_request(request)

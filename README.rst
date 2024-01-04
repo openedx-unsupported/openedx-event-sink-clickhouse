@@ -1,16 +1,13 @@
 Event Sink ClickHouse
 #####################
 
-|pypi-badge| |ci-badge| |codecov-badge| |doc-badge| |pyversions-badge|
-|license-badge| |status-badge|
-
 Purpose
 *******
 
 This project acts as a plugin to the `Edx Platform`_, listens for
 configured `Open edX events`_, and sends them to a `ClickHouse`_ database for
-analytics or other processing. This is being maintained as part of the Open
-Analytics Reference System (`OARS`_) project.
+analytics or other processing. This is being maintained as part of the
+`Aspects`_ project.
 
 OARS consumes the data sent to ClickHouse by this plugin as part of data
 enrichment for reporting, or capturing data that otherwise does not fit in
@@ -21,9 +18,7 @@ Sinks
 
 Currently the only sink is in the CMS. It listens for the ``COURSE_PUBLISHED``
 signal and serializes a subset of the published course blocks into one table
-and the relationships between blocks into another table. With those we are
-able to recreate the "graph" of the course and get relevant data, such as
-block names, for reporting.
+in ClickHouse.
 
 Commands
 ********
@@ -44,7 +39,7 @@ Please see the command help for details:
 .. _Open edX events: https://github.com/openedx/openedx-events
 .. _Edx Platform: https://github.com/openedx/edx-platform
 .. _ClickHouse: https://clickhouse.com
-.. _OARS: https://docs.openedx.org/projects/openedx-oars/en/latest/index.html
+.. _Aspects: https://docs.openedx.org/projects/openedx-aspects/en/latest/index.html
 
 Getting Started
 ***************
@@ -212,33 +207,3 @@ Reporting Security Issues
 *************************
 
 Please do not report security issues in public. Please email security@openedx.org.
-
-.. |pypi-badge| image:: https://img.shields.io/pypi/v/openedx-event-sink-clickhouse.svg
-    :target: https://pypi.python.org/pypi/openedx-event-sink-clickhouse/
-    :alt: PyPI
-
-.. |ci-badge| image:: https://github.com/openedx/openedx-event-sink-clickhouse/workflows/Python%20CI/badge.svg?branch=main
-    :target: https://github.com/openedx/openedx-event-sink-clickhouse/actions
-    :alt: CI
-
-.. |codecov-badge| image:: https://codecov.io/github/openedx/openedx-event-sink-clickhouse/coverage.svg?branch=main
-    :target: https://codecov.io/github/openedx/openedx-event-sink-clickhouse?branch=main
-    :alt: Codecov
-
-.. |doc-badge| image:: https://readthedocs.org/projects/openedx-event-sink-clickhouse/badge/?version=latest
-    :target: https://openedx-event-sink-clickhouse.readthedocs.io/en/latest/
-    :alt: Documentation
-
-.. |pyversions-badge| image:: https://img.shields.io/pypi/pyversions/openedx-event-sink-clickhouse.svg
-    :target: https://pypi.python.org/pypi/openedx-event-sink-clickhouse/
-    :alt: Supported Python versions
-
-.. |license-badge| image:: https://img.shields.io/github/license/openedx/openedx-event-sink-clickhouse.svg
-    :target: https://github.com/openedx/openedx-event-sink-clickhouse/blob/main/LICENSE.txt
-    :alt: License
-
-.. TODO: Choose one of the statuses below and remove the other status-badge lines.
-.. |status-badge| image:: https://img.shields.io/badge/Status-Experimental-yellow
-.. .. |status-badge| image:: https://img.shields.io/badge/Status-Maintained-brightgreen
-.. .. |status-badge| image:: https://img.shields.io/badge/Status-Deprecated-orange
-.. .. |status-badge| image:: https://img.shields.io/badge/Status-Unsupported-red

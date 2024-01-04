@@ -130,14 +130,13 @@ if sys.argv[-1] == 'tag':
     sys.exit()
 
 README = open(os.path.join(os.path.dirname(__file__), 'README.rst'), encoding="utf8").read()
-CHANGELOG = open(os.path.join(os.path.dirname(__file__), 'CHANGELOG.rst'), encoding="utf8").read()
 
 setup(
     name='openedx_event_sink_clickhouse',
     version=VERSION,
     description="""A sink for Open edX events to send them to ClickHouse""",
     long_description_content_type="text/x-rst",
-    long_description=README + '\n\n' + CHANGELOG,
+    long_description=README,
     author='edX',
     author_email='oscm@edx.org',
     url='https://github.com/openedx/openedx_event_sink_clickhouse',

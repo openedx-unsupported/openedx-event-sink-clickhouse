@@ -34,14 +34,18 @@ class BaseSinkSerializer(serializers.Serializer):  # pylint: disable=abstract-me
 class UserProfileSerializer(BaseSinkSerializer, serializers.ModelSerializer):
     """Serializer for user profile events."""
 
+    email = serializers.CharField(source="user.email")
+
     class Meta:
         """Meta class for user profile serializer."""
 
         model = get_model("user_profile")
+
         fields = [
             "id",
             "user_id",
             "name",
+            "email",
             "meta",
             "courseware",
             "language",
