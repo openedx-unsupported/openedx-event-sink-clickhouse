@@ -27,7 +27,7 @@ billiard==4.2.0
     # via
     #   -r requirements/quality.txt
     #   celery
-black==23.12.1
+black==24.1.1
     # via -r requirements/dev.in
 build==1.0.3
     # via
@@ -95,7 +95,7 @@ colorama==0.4.6
     # via
     #   -r requirements/ci.txt
     #   tox
-coverage[toml]==7.4.0
+coverage[toml]==7.4.1
     # via
     #   -r requirements/quality.txt
     #   coverage
@@ -104,7 +104,7 @@ ddt==1.7.1
     # via -r requirements/quality.txt
 diff-cover==8.0.3
     # via -r requirements/dev.in
-dill==0.3.7
+dill==0.3.8
     # via
     #   -r requirements/quality.txt
     #   pylint
@@ -196,7 +196,7 @@ mccabe==0.7.0
     #   pylint
 mypy-extensions==1.0.0
     # via black
-newrelic==9.5.0
+newrelic==9.6.0
     # via
     #   -r requirements/quality.txt
     #   edx-django-utils
@@ -228,7 +228,7 @@ platformdirs==4.1.0
     #   pylint
     #   tox
     #   virtualenv
-pluggy==1.3.0
+pluggy==1.4.0
     # via
     #   -r requirements/ci.txt
     #   -r requirements/quality.txt
@@ -291,7 +291,7 @@ pyproject-hooks==1.0.0
     # via
     #   -r requirements/pip-tools.txt
     #   build
-pytest==7.4.4
+pytest==8.0.0
     # via
     #   -r requirements/quality.txt
     #   pytest-cov
@@ -304,7 +304,7 @@ python-dateutil==2.8.2
     # via
     #   -r requirements/quality.txt
     #   celery
-python-slugify==8.0.1
+python-slugify==8.0.2
     # via
     #   -r requirements/quality.txt
     #   code-annotations
