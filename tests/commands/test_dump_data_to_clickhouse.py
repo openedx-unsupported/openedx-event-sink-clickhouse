@@ -31,6 +31,10 @@ def dummy_model_factory():
             self.id = id
             self.created = datetime.now()
 
+        @property
+        def pk(self):
+            return self.id
+
     return DummyModel
 
 
@@ -44,11 +48,15 @@ def dummy_serializer_factory():
         Dummy serializer for testing.
         """
 
-        def __init__(self, model):
+        def __init__(self, model, many=False, initial=None):
             self.model = model
+            self.many = many
+            self.initial = initial
 
         @property
         def data(self):
+            if self.many:
+                return [{"id": item, "created": datetime.now()} for item in self.model]
             return {"id": self.model.id, "created": self.model.created}
 
     return DummySerializer
@@ -65,18 +73,19 @@ class DummySink(ModelBaseSink):
     serializer_class = dummy_serializer_factory()
     timestamp_field = "created"
     clickhouse_table_name = "dummy_table"
+    factory = dummy_model_factory()
 
-    def get_queryset(self):
-        return [dummy_model_factory()(id) for id in range(1, 5)]
-
-    def convert_id(self, item_id):
-        return int(item_id)
+    def get_queryset(self, start_pk=None):
+        return [self.factory(id) for id in range(1, 5)]
 
     def should_dump_item(self, unique_key):
-        if unique_key % 2 == 0:
-            return True, "Even number"
-        else:
-            return False, "Odd number"
+        return True, "No reason"
+
+    def send_item_and_log(self, item_id, serialized_item, many):
+        pass
+
+    def get_object(self, item_id):
+        return self.factory(item_id)
 
 
 def dump_command_basic_options():
@@ -85,28 +94,24 @@ def dump_command_basic_options():
     """
     options = [
         CommandOptions(
-            options={"object": "dummy", "ids_to_skip": ["1", "2", "3", "4"]},
-            expected_num_submitted=0,
-            expected_logs=[
-                "submitted for export to ClickHouse",
-            ],
+            options={"object": "dummy", "batch_size": 1, "sleep_time": 0},
+            expected_num_submitted=4,
+            expected_logs=["Dumped 4 objects to ClickHouse",],
         ),
         CommandOptions(
-            options={"object": "dummy", "limit": 1},
+            options={"object": "dummy", "limit": 1, "batch_size": 1, "sleep_time": 0},
             expected_num_submitted=1,
             expected_logs=["Limit of 1 eligible objects has been reached, quitting!"],
         ),
         CommandOptions(
-            options={"object": "dummy", "ids": ["1", "2", "3", "4"]},
+            options={"object": "dummy", "batch_size": 2, "sleep_time": 0},
             expected_num_submitted=2,
-            expected_logs=[
-                "These objects were submitted for dump to ClickHouse successfully",
-            ],
+            expected_logs=["Now dumping 2 Dummy to ClickHouse",],
         ),
         CommandOptions(
-            options={"object": "dummy", "force": True},
-            expected_num_submitted=4,
-            expected_logs=["Force is set"],
+            options={"object": "dummy", "batch_size": 1, "sleep_time": 0},
+            expected_num_submitted=3,
+            expected_logs=["Now dumping 1 Dummy to ClickHouse", "Dumped 4 objects to ClickHouse"],
         ),
     ]
 
@@ -115,17 +120,13 @@ def dump_command_basic_options():
 
 
 @pytest.mark.parametrize("test_command_option", dump_command_basic_options())
-@patch(
-    "event_sink_clickhouse.management.commands.dump_data_to_clickhouse.dump_data_to_clickhouse"
-)
-def test_dump_courses_options(mock_dump_data, test_command_option, caplog):
+def test_dump_courses_options(test_command_option, caplog):
     option_combination, expected_num_submitted, expected_outputs = test_command_option
 
     assert DummySink.model in [cls.model for cls in ModelBaseSink.__subclasses__()]
 
     call_command("dump_data_to_clickhouse", **option_combination)
 
-    assert mock_dump_data.apply_async.call_count == expected_num_submitted
     for expected_output in expected_outputs:
         assert expected_output in caplog.text
 
@@ -162,10 +163,7 @@ def dump_basic_invalid_options():
 
 
 @pytest.mark.parametrize("test_command_option", dump_basic_invalid_options())
-@patch(
-    "event_sink_clickhouse.management.commands.dump_data_to_clickhouse.dump_data_to_clickhouse"
-)
-def test_dump_courses_options_invalid(mock_dump_data, test_command_option, caplog):
+def test_dump_courses_options_invalid(test_command_option, caplog):
     option_combination, expected_num_submitted, expected_outputs = test_command_option
     assert DummySink.model in [cls.model for cls in ModelBaseSink.__subclasses__()]
 

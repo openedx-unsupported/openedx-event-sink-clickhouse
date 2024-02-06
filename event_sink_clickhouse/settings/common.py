@@ -13,7 +13,7 @@ def plugin_settings(settings):
         # to avoid pulling in more dependencies to the platform than necessary.
         "url": "http://clickhouse:8123",
         "username": "ch_cms",
-        "password": "TYreGozgtDG3vkoWPUHVVM6q",
+        "password": "password",
         "database": "event_sink",
         "timeout_secs": 5,
     }

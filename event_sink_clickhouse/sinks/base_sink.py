@@ -8,6 +8,7 @@ from collections import namedtuple
 
 import requests
 from django.conf import settings
+from django.core.paginator import Paginator
 from edx_toggles.toggles import WaffleFlag
 
 from event_sink_clickhouse.utils import get_model
@@ -151,11 +152,14 @@ class ModelBaseSink(BaseSink):
         """
         return get_model(self.model)
 
-    def get_queryset(self):
+    def get_queryset(self, start_pk=None):
         """
         Return the queryset to be used for the insert
         """
-        return self.get_model().objects.all()
+        if start_pk:
+            return self.get_model().objects.filter(pk__gt=start_pk).order_by("pk")
+        else:
+            return self.get_model().objects.all().order_by("pk")
 
     def dump(self, item_id, many=False, initial=None):
         """
@@ -272,27 +276,30 @@ class ModelBaseSink(BaseSink):
 
         self._send_clickhouse_request(request)
 
-    def fetch_target_items(self, ids=None, skip_ids=None, force_dump=False):
+    def fetch_target_items(self, start_pk=None, ids=None, skip_ids=None, force_dump=False, batch_size=None):
         """
         Fetch the items that should be dumped to ClickHouse
         """
         if ids:
             item_keys = [self.convert_id(item_id) for item_id in ids]
         else:
-            item_keys = [item.id for item in self.get_queryset()]
+            item_keys = self.get_queryset(start_pk)
 
         skip_ids = (
             [str(item_id) for item_id in skip_ids] if skip_ids else []
         )
-
-        for item_key in item_keys:
-            if str(item_key) in skip_ids:
-                yield item_key, False, f"{self.name} is explicitly skipped"
-            elif force_dump:
-                yield item_key, True, "Force is set"
-            else:
-                should_be_dumped, reason = self.should_dump_item(item_key)
-                yield item_key, should_be_dumped, reason
+        paginator = Paginator(item_keys, batch_size)
+        for i in range(1, paginator.num_pages+1):
+            page = paginator.page(i)
+            items = page.object_list
+            for item_key in items:
+                if str(item_key) in skip_ids:
+                    yield item_key, False, f"{self.name} is explicitly skipped"
+                elif force_dump:
+                    yield item_key, True, "Force is set"
+                else:
+                    should_be_dumped, reason = self.should_dump_item(item_key)
+                    yield item_key, should_be_dumped, reason
 
     def convert_id(self, item_id):
         """
@@ -351,3 +358,14 @@ class ModelBaseSink(BaseSink):
         )
 
         return enabled or waffle_flag.is_enabled()
+
+    @classmethod
+    def get_sink_by_model_name(cls, model):
+        """
+        Return the sink instance for the given model
+        """
+        for sink in cls.__subclasses__():
+            if sink.model == model:
+                return sink
+
+        return None

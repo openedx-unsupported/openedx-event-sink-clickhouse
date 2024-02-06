@@ -219,7 +219,3 @@ class CourseOverviewSink(ModelBaseSink):  # pylint: disable=abstract-method
 
     def convert_id(self, item_id):
         return CourseKey.from_string(item_id)
-
-    def get_queryset(self):
-        modulestore = get_modulestore()
-        return modulestore.get_course_summaries()
