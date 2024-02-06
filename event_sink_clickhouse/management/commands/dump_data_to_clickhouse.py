@@ -26,12 +26,12 @@ log = logging.getLogger(__name__)
 
 
 def dump_target_objects_to_clickhouse(
-    connection_overrides=None,
     sink=None,
-    object_ids=None,
-    objects_to_skip=None,
-    force=None,
+    object_ids=[],
+    objects_to_skip=[],
+    force=False,
     limit=None,
+    batch_size=1000,
 ):
     """
     Iterates through a list of objects in the ORN, serializes them to csv,
@@ -49,6 +49,7 @@ def dump_target_objects_to_clickhouse(
     skipped_objects = []
 
     index = 0
+    objects_to_submit = []
     for object_id, should_be_dumped, reason in sink.fetch_target_items(
         object_ids, objects_to_skip, force
     ):
@@ -64,15 +65,12 @@ def dump_target_objects_to_clickhouse(
             log.info(
                 f"{sink.model} {index}: Submitting {object_id} for dump to ClickHouse, reason '{reason}'."
             )
+            objects_to_submit.append(object_id)
 
-            dump_data_to_clickhouse.apply_async(
-                kwargs={
-                    "sink_module": sink.__module__,
-                    "sink_name": sink.__class__.__name__,
-                    "object_id": str(object_id),
-                    "connection_overrides": connection_overrides,
-                }
-            )
+            if len(objects_to_submit) % batch_size == 0:
+                sink.dump(objects_to_submit, many=True)
+                submitted_objects.extend(objects_to_submit)
+                objects_to_submit = []
 
             submitted_objects.append(str(object_id))
 
@@ -147,6 +145,12 @@ class Command(BaseCommand):
             type=int,
             help="maximum number of objects to dump, cannot be used with '--ids' or '--force'",
         )
+        parser.add_argument(
+            "--batch_size",
+            type=int,
+            default=1000,
+            help="number of objects to dump in a single batch",
+        )
 
     def handle(self, *args, **options):
         """
@@ -183,12 +187,12 @@ class Command(BaseCommand):
             if cls.model == options["object"]:
                 sink = cls(connection_overrides, log)
                 submitted_objects, skipped_objects = dump_target_objects_to_clickhouse(
-                    connection_overrides,
                     sink,
                     [object_id.strip() for object_id in ids],
                     [object_id.strip() for object_id in ids_to_skip],
                     options["force"],
                     options["limit"],
+                    options["batch_size"],
                 )
 
                 log.info(
