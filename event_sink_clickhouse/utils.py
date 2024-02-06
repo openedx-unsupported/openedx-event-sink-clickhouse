@@ -57,3 +57,14 @@ def get_detached_xblock_types():  # pragma: no cover
     from xmodule.modulestore.store_utilities import DETACHED_XBLOCK_TYPES
 
     return DETACHED_XBLOCK_TYPES
+
+
+def get_sink_by_model(model):
+    """Get a sink by model."""
+    from event_sink_clickhouse.sinks.base_sink import ModelBaseSink
+
+    for sink in ModelBaseSink.__subclasses__():
+        if sink.model == model:
+            return sink
+
+    return None

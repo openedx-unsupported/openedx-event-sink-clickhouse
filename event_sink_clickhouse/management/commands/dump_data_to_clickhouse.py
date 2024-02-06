@@ -15,12 +15,13 @@ Example usages (see usage for more options):
     python manage.py cms dump_objects_to_clickhouse --limit 1000
 """
 import logging
+import time
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand, CommandError
 
 from event_sink_clickhouse.sinks.base_sink import ModelBaseSink
-from event_sink_clickhouse.tasks import dump_data_to_clickhouse
+from event_sink_clickhouse.utils import get_sink_by_model
 
 log = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ def dump_target_objects_to_clickhouse(
     force=False,
     limit=None,
     batch_size=1000,
+    sleep_time=10,
 ):
     """
     Iterates through a list of objects in the ORN, serializes them to csv,
@@ -71,6 +73,7 @@ def dump_target_objects_to_clickhouse(
                 sink.dump(objects_to_submit, many=True)
                 submitted_objects.extend(objects_to_submit)
                 objects_to_submit = []
+                time.sleep(sleep_time)
 
             submitted_objects.append(str(object_id))
 
@@ -79,6 +82,9 @@ def dump_target_objects_to_clickhouse(
                     f"Limit of {limit} eligible objects has been reached, quitting!"
                 )
                 break
+
+    if objects_to_submit:
+        sink.dump(objects_to_submit, many=True)
 
     return submitted_objects, skipped_objects
 
@@ -151,6 +157,12 @@ class Command(BaseCommand):
             default=1000,
             help="number of objects to dump in a single batch",
         )
+        parser.add_argument(
+            "--sleep_time",
+            type=int,
+            default=10,
+            help="number of seconds to sleep between batches",
+        )
 
     def handle(self, *args, **options):
         """
@@ -183,29 +195,29 @@ class Command(BaseCommand):
             log.error(message)
             raise CommandError(message)
 
-        for cls in ModelBaseSink.__subclasses__():  # pragma: no cover
-            if cls.model == options["object"]:
-                sink = cls(connection_overrides, log)
-                submitted_objects, skipped_objects = dump_target_objects_to_clickhouse(
-                    sink,
-                    [object_id.strip() for object_id in ids],
-                    [object_id.strip() for object_id in ids_to_skip],
-                    options["force"],
-                    options["limit"],
-                    options["batch_size"],
-                )
 
-                log.info(
-                    "%d objects submitted for export to ClickHouse. %d objects skipped.",
-                    len(submitted_objects),
-                    len(skipped_objects),
-                )
+        Sink = get_sink_by_model(options["object"])
+        sink = Sink(connection_overrides, log)
+        submitted_objects, skipped_objects = dump_target_objects_to_clickhouse(
+            sink,
+            [object_id.strip() for object_id in ids],
+            [object_id.strip() for object_id in ids_to_skip],
+            options["force"],
+            options["limit"],
+            options["batch_size"],
+        )
 
-                if not submitted_objects:
-                    log.info("No objects submitted for export to ClickHouse at all!")
-                else:
-                    log.info(  # pylint: disable=logging-not-lazy
-                        "These objects were submitted for dump to ClickHouse successfully:\n\t"
-                        + "\n\t".join(submitted_objects)
-                    )
-                break
+        log.info(
+            "%d objects submitted for export to ClickHouse. %d objects skipped.",
+            len(submitted_objects),
+            len(skipped_objects),
+        )
+
+        if not submitted_objects:
+            log.info("No objects submitted for export to ClickHouse at all!")
+        else:
+            log.info(  # pylint: disable=logging-not-lazy
+                "These objects were submitted for dump to ClickHouse successfully:\n\t"
+                + "\n\t".join(submitted_objects)
+            )
+
