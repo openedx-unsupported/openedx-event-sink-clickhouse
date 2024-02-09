@@ -117,16 +117,20 @@ django==3.2.24
     #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
     #   -r requirements/quality.txt
     #   django-crum
+    #   django-mock-queries
     #   django-waffle
     #   djangorestframework
     #   edx-django-utils
     #   edx-i18n-tools
     #   edx-toggles
+    #   model-bakery
 django-crum==0.7.9
     # via
     #   -r requirements/quality.txt
     #   edx-django-utils
     #   edx-toggles
+django-mock-queries==2.2.0
+    # via -r requirements/quality.txt
 django-rest-framework==0.1.0
     # via -r requirements/quality.txt
 django-waffle==4.1.0
@@ -137,6 +141,7 @@ django-waffle==4.1.0
 djangorestframework==3.14.0
     # via
     #   -r requirements/quality.txt
+    #   django-mock-queries
     #   django-rest-framework
 edx-django-utils==5.10.1
     # via
@@ -194,6 +199,10 @@ mccabe==0.7.0
     # via
     #   -r requirements/quality.txt
     #   pylint
+model-bakery==1.17.0
+    # via
+    #   -r requirements/quality.txt
+    #   django-mock-queries
 mypy-extensions==1.0.0
     # via black
 newrelic==9.6.0
