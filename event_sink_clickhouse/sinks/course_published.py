@@ -149,6 +149,7 @@ class CourseOverviewSink(ModelBaseSink):  # pylint: disable=abstract-method
     name = "Course Overview"
     serializer_class = CourseOverviewSerializer
     nested_sinks = [XBlockSink]
+    pk_format = str
 
     def should_dump_item(self, unique_key):
         """
@@ -216,6 +217,3 @@ class CourseOverviewSink(ModelBaseSink):  # pylint: disable=abstract-method
             return str(approx_last_published)
 
         return None
-
-    def convert_id(self, item_id):
-        return CourseKey.from_string(item_id)

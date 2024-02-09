@@ -125,6 +125,10 @@ class ModelBaseSink(BaseSink):
     list: A list of nested sink instances that can be used to further process or route the event data.
     Nested sinks allow chaining multiple sinks together for more complex event processing pipelines.
     """
+    pk_format = int
+    """
+    function: A function to format the primary key of the model
+    """
 
     def __init__(self, connection_overrides, log):
         super().__init__(connection_overrides, log)
@@ -157,6 +161,7 @@ class ModelBaseSink(BaseSink):
         Return the queryset to be used for the insert
         """
         if start_pk:
+            start_pk = self.pk_format(start_pk)
             return self.get_model().objects.filter(pk__gt=start_pk).order_by("pk")
         else:
             return self.get_model().objects.all().order_by("pk")
@@ -280,15 +285,15 @@ class ModelBaseSink(BaseSink):
         """
         Fetch the items that should be dumped to ClickHouse
         """
+        queryset = self.get_queryset(start_pk)
         if ids:
-            item_keys = [self.convert_id(item_id) for item_id in ids]
-        else:
-            item_keys = self.get_queryset(start_pk)
+            ids = map(self.pk_format, ids)
+            queryset = queryset.filter(pk__in=ids)
 
         skip_ids = (
             [str(item_id) for item_id in skip_ids] if skip_ids else []
         )
-        paginator = Paginator(item_keys, batch_size)
+        paginator = Paginator(queryset, batch_size)
         for i in range(1, paginator.num_pages+1):
             page = paginator.page(i)
             items = page.object_list
@@ -300,12 +305,6 @@ class ModelBaseSink(BaseSink):
                 else:
                     should_be_dumped, reason = self.should_dump_item(item_key)
                     yield item_key, should_be_dumped, reason
-
-    def convert_id(self, item_id):
-        """
-        Convert the id to the correct type for the model
-        """
-        return item_id
 
     def should_dump_item(self, unique_key):  # pylint: disable=unused-argument
         """

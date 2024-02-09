@@ -242,12 +242,6 @@ class TestModelBaseSink(TestCase):
         serializer = self.child_sink.get_serializer()
         self.assertEqual(serializer, self.child_sink.serializer_class)
 
-    def test_convert_id(self):
-        """
-        Test that convert_id() returns the correct data.
-        """
-        self.assertEqual(self.child_sink.convert_id(1), 1)
-
     def test_should_dump_item(self):
         """
         Test that should_dump_item() returns the correct data.
