@@ -132,6 +132,7 @@ def dump_command_basic_options():
             expected_logs=[
                 "Now dumping 1 Dummy to ClickHouse",
                 "Dumped 2 objects to ClickHouse",
+                "Last ID: 3"
             ],
         ),
         CommandOptions(
@@ -165,12 +166,12 @@ def dump_command_basic_options():
                 "object": "dummy",
                 "batch_size": 2,
                 "sleep_time": 0,
-                "ids_to_skip": [1],
+                "ids_to_skip": ["3", "4", "5"],
             },
             expected_num_submitted=4,
             expected_logs=[
-                "Now dumping 2 Dummy to ClickHouse",
-                "Dumped 3 objects to ClickHouse",
+                "Now dumping 1 Dummy to ClickHouse",
+                "Dumped 1 objects to ClickHouse",
             ],
         ),
     ]

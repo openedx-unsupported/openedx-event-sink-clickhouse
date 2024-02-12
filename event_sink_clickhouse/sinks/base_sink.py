@@ -287,26 +287,25 @@ class ModelBaseSink(BaseSink):
         """
         queryset = self.get_queryset(start_pk)
         if ids:
-            ids = map(self.pk_format, ids)
+            ids = [self.pk_format(id) for id in ids]
             queryset = queryset.filter(pk__in=ids)
 
-        skip_ids = (
-            [str(item_id) for item_id in skip_ids] if skip_ids else []
-        )
+        if skip_ids:
+            skip_ids = [self.pk_format(id) for id in skip_ids]
+            queryset = queryset.exclude(pk__in=skip_ids)
+
         paginator = Paginator(queryset, batch_size)
         for i in range(1, paginator.num_pages+1):
             page = paginator.page(i)
             items = page.object_list
-            for item_key in items:
-                if str(item_key) in skip_ids:
-                    yield item_key, False, f"{self.name} is explicitly skipped"
-                elif force_dump:
-                    yield item_key, True, "Force is set"
+            for item in items:
+                if force_dump:
+                    yield item, True, "Force is set"
                 else:
-                    should_be_dumped, reason = self.should_dump_item(item_key)
-                    yield item_key, should_be_dumped, reason
+                    should_be_dumped, reason = self.should_dump_item(item)
+                    yield item, should_be_dumped, reason
 
-    def should_dump_item(self, unique_key):  # pylint: disable=unused-argument
+    def should_dump_item(self, item):  # pylint: disable=unused-argument
         """
         Return True if the item should be dumped to ClickHouse, False otherwise
         """
