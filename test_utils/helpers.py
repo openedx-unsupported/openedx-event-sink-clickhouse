@@ -164,8 +164,7 @@ def mock_course_overview():
     Create a fake CourseOverview object that supports just the things we care about.
     """
     mock_overview = MagicMock()
-    mock_overview.get_from_id = MagicMock()
-    mock_overview.get_from_id.return_value = fake_course_overview_factory(datetime.now())
+    mock_overview.return_value = fake_course_overview_factory(datetime.now())
     return mock_overview
 
 

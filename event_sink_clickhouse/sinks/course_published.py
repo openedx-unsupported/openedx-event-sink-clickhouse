@@ -151,7 +151,7 @@ class CourseOverviewSink(ModelBaseSink):  # pylint: disable=abstract-method
     nested_sinks = [XBlockSink]
     pk_format = str
 
-    def should_dump_item(self, unique_key):
+    def should_dump_item(self, item):
         """
         Only dump the course if it's been changed since the last time it's been
         dumped.
@@ -162,14 +162,14 @@ class CourseOverviewSink(ModelBaseSink):  # pylint: disable=abstract-method
             - reason why course needs, or does not need, to be dumped (string)
         """
 
-        course_last_dump_time = self.get_last_dumped_timestamp(unique_key)
+        course_last_dump_time = self.get_last_dumped_timestamp(item)
 
         # If we don't have a record of the last time this command was run,
         # we should serialize the course and dump it
         if course_last_dump_time is None:
             return True, "Course is not present in ClickHouse"
 
-        course_last_published_date = self.get_course_last_published(unique_key)
+        course_last_published_date = self.get_course_last_published(item)
 
         # If we've somehow dumped this course but there is no publish date
         # skip it
@@ -197,7 +197,7 @@ class CourseOverviewSink(ModelBaseSink):  # pylint: disable=abstract-method
             )
         return needs_dump, reason
 
-    def get_course_last_published(self, course_key):
+    def get_course_last_published(self, course_overview):
         """
         Get approximate last publish date for the given course.
         We use the 'modified' column in the CourseOverview table as a quick and easy
@@ -211,8 +211,7 @@ class CourseOverviewSink(ModelBaseSink):  # pylint: disable=abstract-method
             is sortable and similar to ISO 8601:
             https://docs.python.org/3/library/datetime.html#datetime.date.__str__
         """
-        CourseOverview = self.get_model()
-        approx_last_published = CourseOverview.get_from_id(course_key).modified
+        approx_last_published = course_overview.modified
         if approx_last_published:
             return str(approx_last_published)
 

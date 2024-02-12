@@ -77,18 +77,18 @@ class DummySink(ModelBaseSink):
 
     def get_queryset(self, start_pk=None):
         qs = MockSet(
-            MockModel(mock_name="john", email="john@edx.com", pk=1),
-            MockModel(mock_name="jeff", email="jeff@edx.com", pk=2),
-            MockModel(mock_name="bill", email="bill@edx.com", pk=3),
-            MockModel(mock_name="joe", email="joe@edx.com", pk=4),
-            MockModel(mock_name="jim", email="jim@edx.com", pk=5),
+            MockModel(mock_name="john", email="john@test.invalid", pk=1),
+            MockModel(mock_name="jeff", email="jeff@test.invalid", pk=2),
+            MockModel(mock_name="bill", email="bill@test.invalid", pk=3),
+            MockModel(mock_name="joe", email="joe@test.invalid", pk=4),
+            MockModel(mock_name="jim", email="jim@test.invalid", pk=5),
         )
         if start_pk:
             qs = qs.filter(pk__gt=start_pk)
         return qs
 
     def should_dump_item(self, unique_key):
-        return unique_key.pk!=1, "No reason"
+        return unique_key.pk != 1, "No reason"
 
     def send_item_and_log(self, item_id, serialized_item, many):
         pass
