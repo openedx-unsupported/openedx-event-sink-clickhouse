@@ -23,7 +23,6 @@ from test_utils.helpers import (
     fake_course_overview_factory,
     fake_serialize_fake_course_overview,
     get_clickhouse_http_params,
-    mock_course_overview,
     mock_detached_xblock_types,
 )
 
@@ -114,40 +113,28 @@ def test_course_publish_clickhouse_error(mock_modulestore, mock_detached, mock_o
     assert f"Error trying to dump Course Overview {course} to ClickHouse!" in caplog.text
 
 
-@patch("event_sink_clickhouse.sinks.course_published.CourseOverviewSink.get_model")
-def test_get_course_last_published(mock_overview):
+def test_get_course_last_published():
     """
     Make sure we get a valid date back from this in the expected format.
     """
     # Create a fake course overview, which will return a datetime object
-    course = mock_course_overview()
-    mock_overview.return_value = course
-
-    # Request our course last published date
-    course_key = course_str_factory()
+    course_overview = fake_course_overview_factory(modified=datetime.now())
 
     # Confirm that the string date we get back is a valid date
-    last_published_date = CourseOverviewSink(None, None).get_course_last_published(course_key)
+    last_published_date = CourseOverviewSink(None, None).get_course_last_published(course_overview)
     dt = datetime.strptime(last_published_date, "%Y-%m-%d %H:%M:%S.%f")
     assert dt
 
 
 @responses.activate(registry=OrderedRegistry)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
-@patch("event_sink_clickhouse.sinks.course_published.CourseOverviewSink.get_model")
-def test_no_last_published_date(mock_overview):
+def test_no_last_published_date():
     """
     Test that we get a None value back for courses that don't have a modified date.
 
     In some cases there is not modified date on a course. In coursegraph we
     skipped these if they are already in the database, so we're continuing this trend here.
     """
-    # Fake a course with no modified date
-    course = mock_course_overview()
-    mock_overview.return_value = course
-    mock_overview.return_value.get_from_id.return_value = fake_course_overview_factory(modified=None)
-
-    # Request our course last published date
-    course_key = course_str_factory()
+    course_overview = fake_course_overview_factory(modified=None)
 
     # should_dump_course will reach out to ClickHouse for the last dump date
     # we'll fake the response here to have any date, such that we'll exercise
@@ -159,10 +146,70 @@ def test_no_last_published_date(mock_overview):
 
     # Confirm that the string date we get back is a valid date
     sink = CourseOverviewSink(connection_overrides={}, log=logging.getLogger())
-    should_dump_course, reason = sink.should_dump_item(course_key)
+    should_dump_course, reason = sink.should_dump_item(course_overview)
 
     assert should_dump_course is False
     assert reason == "No last modified date in CourseOverview"
+
+
+@responses.activate(registry=OrderedRegistry)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+def test_should_dump_item():
+    """
+    Test that we get the expected results from should_dump_item.
+    """
+    course_overview = fake_course_overview_factory(modified=datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f+00:00"))
+
+    # should_dump_course will reach out to ClickHouse for the last dump date
+    # we'll fake the response here to have any date, such that we'll exercise
+    # all the "no modified date" code.
+    responses.get(
+        "https://foo.bar/",
+        body="2023-05-03 15:47:39.331024+00:00"
+    )
+
+    # Confirm that the string date we get back is a valid date
+    sink = CourseOverviewSink(connection_overrides={}, log=logging.getLogger())
+    should_dump_course, reason = sink.should_dump_item(course_overview)
+
+    assert should_dump_course is True
+    assert "Course has been published since last dump time - " in reason
+
+
+@responses.activate(registry=OrderedRegistry)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+def test_should_dump_item_not_in_clickhouse():
+    """
+    Test that a course gets dumped if it's never been dumped before
+    """
+    course_overview = fake_course_overview_factory(modified=datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f+00:00"))
+    responses.get(
+        "https://foo.bar/",
+        body=""
+    )
+
+    sink = CourseOverviewSink(connection_overrides={}, log=logging.getLogger())
+    should_dump_course, reason = sink.should_dump_item(course_overview)
+
+    assert should_dump_course is True
+    assert "Course is not present in ClickHouse" == reason
+
+
+@responses.activate(registry=OrderedRegistry)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
+def test_should_dump_item_no_needs_dump():
+    """
+    Test that a course gets dumped if it's never been dumped before
+    """
+    modified = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
+    course_overview = fake_course_overview_factory(modified=modified)
+    responses.get(
+        "https://foo.bar/",
+        body=modified
+    )
+
+    sink = CourseOverviewSink(connection_overrides={}, log=logging.getLogger())
+    should_dump_course, reason = sink.should_dump_item(course_overview)
+
+    assert should_dump_course is False
+    assert "Course has NOT been published since last dump time - " in reason
 
 
 @responses.activate(registry=OrderedRegistry)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter

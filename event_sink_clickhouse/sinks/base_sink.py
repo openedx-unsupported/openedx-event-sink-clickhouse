@@ -8,6 +8,7 @@ from collections import namedtuple
 
 import requests
 from django.conf import settings
+from django.core.paginator import Paginator
 from edx_toggles.toggles import WaffleFlag
 
 from event_sink_clickhouse.utils import get_model
@@ -124,6 +125,10 @@ class ModelBaseSink(BaseSink):
     list: A list of nested sink instances that can be used to further process or route the event data.
     Nested sinks allow chaining multiple sinks together for more complex event processing pipelines.
     """
+    pk_format = int
+    """
+    function: A function to format the primary key of the model
+    """
 
     def __init__(self, connection_overrides, log):
         super().__init__(connection_overrides, log)
@@ -151,11 +156,15 @@ class ModelBaseSink(BaseSink):
         """
         return get_model(self.model)
 
-    def get_queryset(self):
+    def get_queryset(self, start_pk=None):
         """
         Return the queryset to be used for the insert
         """
-        return self.get_model().objects.all()
+        if start_pk:
+            start_pk = self.pk_format(start_pk)
+            return self.get_model().objects.filter(pk__gt=start_pk).order_by("pk")
+        else:
+            return self.get_model().objects.all().order_by("pk")
 
     def dump(self, item_id, many=False, initial=None):
         """
@@ -272,35 +281,31 @@ class ModelBaseSink(BaseSink):
 
         self._send_clickhouse_request(request)
 
-    def fetch_target_items(self, ids=None, skip_ids=None, force_dump=False):
+    def fetch_target_items(self, start_pk=None, ids=None, skip_ids=None, force_dump=False, batch_size=None):
         """
         Fetch the items that should be dumped to ClickHouse
         """
+        queryset = self.get_queryset(start_pk)
         if ids:
-            item_keys = [self.convert_id(item_id) for item_id in ids]
-        else:
-            item_keys = [item.id for item in self.get_queryset()]
+            ids = [self.pk_format(id) for id in ids]
+            queryset = queryset.filter(pk__in=ids)
 
-        skip_ids = (
-            [str(item_id) for item_id in skip_ids] if skip_ids else []
-        )
+        if skip_ids:
+            skip_ids = [self.pk_format(id) for id in skip_ids]
+            queryset = queryset.exclude(pk__in=skip_ids)
 
-        for item_key in item_keys:
-            if str(item_key) in skip_ids:
-                yield item_key, False, f"{self.name} is explicitly skipped"
-            elif force_dump:
-                yield item_key, True, "Force is set"
-            else:
-                should_be_dumped, reason = self.should_dump_item(item_key)
-                yield item_key, should_be_dumped, reason
+        paginator = Paginator(queryset, batch_size)
+        for i in range(1, paginator.num_pages+1):
+            page = paginator.page(i)
+            items = page.object_list
+            for item in items:
+                if force_dump:
+                    yield item, True, "Force is set"
+                else:
+                    should_be_dumped, reason = self.should_dump_item(item)
+                    yield item, should_be_dumped, reason
 
-    def convert_id(self, item_id):
-        """
-        Convert the id to the correct type for the model
-        """
-        return item_id
-
-    def should_dump_item(self, unique_key):  # pylint: disable=unused-argument
+    def should_dump_item(self, item):  # pylint: disable=unused-argument
         """
         Return True if the item should be dumped to ClickHouse, False otherwise
         """
@@ -351,3 +356,14 @@ class ModelBaseSink(BaseSink):
         )
 
         return enabled or waffle_flag.is_enabled()
+
+    @classmethod
+    def get_sink_by_model_name(cls, model):
+        """
+        Return the sink instance for the given model
+        """
+        for sink in cls.__subclasses__():
+            if sink.model == model:
+                return sink
+
+        return None

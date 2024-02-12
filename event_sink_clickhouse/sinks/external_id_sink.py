@@ -14,3 +14,6 @@ class ExternalIdSink(ModelBaseSink):  # pylint: disable=abstract-method
     timestamp_field = "time_last_dumped"
     name = "External ID"
     serializer_class = UserExternalIDSerializer
+
+    def get_queryset(self, start_pk=None):
+        return super().get_queryset(start_pk).select_related("user", "external_id_type")

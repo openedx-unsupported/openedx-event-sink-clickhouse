@@ -27,12 +27,45 @@ class ChildSink(ModelBaseSink):  # pylint: disable=abstract-method
 
 @override_settings(
     EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG={
+        "url": "http://clickhouse:8123",
+        "username": "ch_cms",
+        "password": "password",
+        "database": "event_sink",
+        "timeout_secs": 5,
+    },
+    EVENT_SINK_CLICKHOUSE_MODEL_CONFIG={},
+)
+class TestBaseSink(TestCase):
+    """
+    Tests for the BaseSink.
+    """
+
+    def test_connection_overrides(self):
+        """
+        Test that connection_overrides() returns the correct data.
+        """
+        child_sink = ChildSink(connection_overrides={
+            "url": "http://dummy:8123",
+            "username": "dummy_username",
+            "password": "dummy_password",
+            "database": "dummy_database",
+            "timeout_secs": 0,
+        }, log=logging.getLogger())
+
+        self.assertEqual(child_sink.ch_url, "http://dummy:8123")
+        self.assertEqual(child_sink.ch_auth, ("dummy_username", "dummy_password"))
+        self.assertEqual(child_sink.ch_database, "dummy_database")
+        self.assertEqual(child_sink.ch_timeout_secs, 0)
+
+
+@override_settings(
+    EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG={
         # URL to a running ClickHouse server's HTTP interface. ex: https://foo.openedx.org:8443/ or
         # http://foo.openedx.org:8123/ . Note that we only support the ClickHouse HTTP interface
         # to avoid pulling in more dependencies to the platform than necessary.
         "url": "http://clickhouse:8123",
         "username": "ch_cms",
-        "password": "TYreGozgtDG3vkoWPUHVVM6q",
+        "password": "password",
         "database": "event_sink",
         "timeout_secs": 5,
     },
@@ -194,6 +227,16 @@ class TestModelBaseSink(TestCase):
         self.child_sink.get_queryset()
         self.child_sink.get_model.return_value.objects.all.assert_called_once()
 
+    def test_get_queryset_by_start_pk(self):
+        """
+        Test that get_queryset() returns a query set.
+        """
+        self.child_sink.get_model = Mock()
+        self.child_sink.get_queryset(start_pk=1)
+        self.child_sink.get_model.return_value.objects.filter.assert_called_once_with(
+            pk__gt=1
+        )
+
     def test_nested_sink_dump_related(self):
         """
         Test that dump_related() calls the correct methods.
@@ -208,12 +251,6 @@ class TestModelBaseSink(TestCase):
         """
         serializer = self.child_sink.get_serializer()
         self.assertEqual(serializer, self.child_sink.serializer_class)
-
-    def test_convert_id(self):
-        """
-        Test that convert_id() returns the correct data.
-        """
-        self.assertEqual(self.child_sink.convert_id(1), 1)
 
     def test_should_dump_item(self):
         """
@@ -243,3 +280,13 @@ class TestModelBaseSink(TestCase):
         Test that is_enable() returns the correct data.
         """
         self.assertEqual(self.child_sink.is_enabled(), True)
+
+    def test_get_sink_by_model_name(self):
+        """
+        Test that get_sink_by_model_name() returns the correct data.
+        """
+        no_sink = ModelBaseSink.get_sink_by_model_name("non_existent_model")
+        child_sink = ModelBaseSink.get_sink_by_model_name("child_model")
+
+        self.assertIsNone(no_sink)
+        self.assertEqual(child_sink, ChildSink)
