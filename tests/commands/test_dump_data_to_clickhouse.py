@@ -4,21 +4,17 @@ Tests for the dump_data_to_clickhouse management command.
 
 from collections import namedtuple
 from datetime import datetime
-from unittest.mock import Mock
 
 import django.core.management.base
 import pytest
 from django.core.management import call_command
+from django_mock_queries.query import MockModel, MockSet
 
 from event_sink_clickhouse.sinks.base_sink import ModelBaseSink
 
 CommandOptions = namedtuple(
     "TestCommandOptions", ["options", "expected_num_submitted", "expected_logs"]
 )
-
-from django_mock_queries.query import MockSet, MockModel
-
-
 
 
 def dummy_model_factory():
@@ -81,18 +77,18 @@ class DummySink(ModelBaseSink):
 
     def get_queryset(self, start_pk=None):
         qs = MockSet(
-            MockModel(mock_name='john', email='john@edx.com', pk=1),
-            MockModel(mock_name='jeff', email='jeff@edx.com', pk=2),
-            MockModel(mock_name='bill', email='bill@edx.com', pk=3),
-            MockModel(mock_name='joe', email='joe@edx.com', pk=4),
-            MockModel(mock_name='jim', email='jim@edx.com', pk=5),
+            MockModel(mock_name="john", email="john@edx.com", pk=1),
+            MockModel(mock_name="jeff", email="jeff@edx.com", pk=2),
+            MockModel(mock_name="bill", email="bill@edx.com", pk=3),
+            MockModel(mock_name="joe", email="joe@edx.com", pk=4),
+            MockModel(mock_name="jim", email="jim@edx.com", pk=5),
         )
         if start_pk:
             qs = qs.filter(pk__gt=start_pk)
         return qs
 
     def should_dump_item(self, unique_key):
-        return True, "No reason"
+        return unique_key.pk!=1, "No reason"
 
     def send_item_and_log(self, item_id, serialized_item, many):
         pass
@@ -108,8 +104,10 @@ def dump_command_basic_options():
     options = [
         CommandOptions(
             options={"object": "dummy", "batch_size": 1, "sleep_time": 0},
-            expected_num_submitted=5,
-            expected_logs=["Dumped 5 objects to ClickHouse",],
+            expected_num_submitted=4,
+            expected_logs=[
+                "Dumped 4 objects to ClickHouse",
+            ],
         ),
         CommandOptions(
             options={"object": "dummy", "limit": 1, "batch_size": 1, "sleep_time": 0},
@@ -119,17 +117,61 @@ def dump_command_basic_options():
         CommandOptions(
             options={"object": "dummy", "batch_size": 2, "sleep_time": 0},
             expected_num_submitted=2,
-            expected_logs=["Now dumping 2 Dummy to ClickHouse",],
+            expected_logs=[
+                "Now dumping 2 Dummy to ClickHouse",
+            ],
         ),
         CommandOptions(
-            options={"object": "dummy", "batch_size": 1, "sleep_time": 0, "ids": ["1", "2", "3"]},
+            options={
+                "object": "dummy",
+                "batch_size": 1,
+                "sleep_time": 0,
+                "ids": ["1", "2", "3"],
+            },
             expected_num_submitted=3,
-            expected_logs=["Now dumping 1 Dummy to ClickHouse", "Dumped 3 objects to ClickHouse"],
+            expected_logs=[
+                "Now dumping 1 Dummy to ClickHouse",
+                "Dumped 2 objects to ClickHouse",
+            ],
         ),
         CommandOptions(
-            options={"object": "dummy", "batch_size": 1, "sleep_time": 0, "start_pk": 1},
+            options={
+                "object": "dummy",
+                "batch_size": 1,
+                "sleep_time": 0,
+                "start_pk": 1,
+            },
             expected_num_submitted=4,
-            expected_logs=["Now dumping 1 Dummy to ClickHouse", "Dumped 4 objects to ClickHouse"],
+            expected_logs=[
+                "Now dumping 1 Dummy to ClickHouse",
+                "Dumped 4 objects to ClickHouse",
+            ],
+        ),
+        CommandOptions(
+            options={
+                "object": "dummy",
+                "batch_size": 1,
+                "sleep_time": 0,
+                "force": True,
+            },
+            expected_num_submitted=4,
+            expected_logs=[
+                "Now dumping 1 Dummy to ClickHouse",
+                "Dumped 5 objects to ClickHouse",
+            ],
+        ),
+        CommandOptions(
+            options={
+                "object": "dummy",
+                "batch_size": 2,
+                "sleep_time": 0,
+                "ids_to_skip": [1],
+            },
+            expected_num_submitted=4,
+            expected_logs=[
+                "Now dumping 2 Dummy to ClickHouse",
+                "Dumped 3 objects to ClickHouse",
+            ],
         ),
     ]
 

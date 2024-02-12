@@ -227,6 +227,16 @@ class TestModelBaseSink(TestCase):
         self.child_sink.get_queryset()
         self.child_sink.get_model.return_value.objects.all.assert_called_once()
 
+    def test_get_queryset_by_start_pk(self):
+        """
+        Test that get_queryset() returns a query set.
+        """
+        self.child_sink.get_model = Mock()
+        self.child_sink.get_queryset(start_pk=1)
+        self.child_sink.get_model.return_value.objects.filter.assert_called_once_with(
+            pk__gt=1
+        )
+
     def test_nested_sink_dump_related(self):
         """
         Test that dump_related() calls the correct methods.
