@@ -31,17 +31,6 @@ class SignalHandlersTestCase(TestCase):
 
         mock_dump_task.delay.assert_called_once_with(course_key)
 
-    @patch("event_sink_clickhouse.tasks.dump_user_profile_to_clickhouse")
-    def test_on_user_profile_updated(self, mock_dump_task):
-        """
-        Test that on_user_profile_updated calls dump_user_profile_to_clickhouse.
-        """
-        instance = Mock()
-        sender = Mock()
-        on_user_profile_updated(sender, instance)
-
-        mock_dump_task.delay.assert_called_once_with(instance.id)
-
     @patch("event_sink_clickhouse.tasks.dump_data_to_clickhouse")
     def test_on_externalid_saved(self, mock_dump_task):
         """

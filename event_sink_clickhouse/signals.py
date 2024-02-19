@@ -6,6 +6,7 @@ from django.dispatch import Signal, receiver
 
 from event_sink_clickhouse.sinks.external_id_sink import ExternalIdSink
 from event_sink_clickhouse.sinks.user_retire import UserRetirementSink
+from event_sink_clickhouse.sinks.user_profile_sink import UserProfileSink
 from event_sink_clickhouse.utils import get_model
 
 try:
@@ -35,9 +36,14 @@ def on_user_profile_updated(  # pylint: disable=unused-argument  # pragma: no co
     Receives post save signal and queues the dump job.
     """
     # import here, because signal is registered at startup, but items in tasks are not yet able to be loaded
-    from event_sink_clickhouse.tasks import dump_user_profile_to_clickhouse  # pylint: disable=import-outside-toplevel
+    from event_sink_clickhouse.tasks import dump_data_to_clickhouse  # pylint: disable=import-outside-toplevel
 
-    dump_user_profile_to_clickhouse.delay(instance.id)
+    sink = UserProfileSink(None, None)
+    dump_data_to_clickhouse.delay(
+        sink_module=sink.__module__,
+        sink_name=sink.__class__.__name__,
+        object_id=str(instance.id),
+    )
 
 
 @receiver(post_save, sender=get_model("external_id"))

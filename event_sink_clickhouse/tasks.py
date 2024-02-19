@@ -35,24 +35,6 @@ def dump_course_to_clickhouse(course_key_string, connection_overrides=None):
 
 @shared_task
 @set_code_owner_attribute
-def dump_user_profile_to_clickhouse(user_profile_id, connection_overrides=None):
-    """
-    Serialize a user profile and writes it to ClickHouse.
-
-    Arguments:
-        user_profile_id: user profile id for the user profile to be exported
-        connection_overrides (dict):  overrides to ClickHouse connection
-            parameters specified in `settings.EVENT_SINK_CLICKHOUSE_BACKEND_CONFIG`.
-    """
-    if UserProfileSink.is_enabled():  # pragma: no cover
-        sink = UserProfileSink(
-            connection_overrides=connection_overrides, log=celery_log
-        )
-        sink.dump(user_profile_id)
-
-
-@shared_task
-@set_code_owner_attribute
 def dump_data_to_clickhouse(
     sink_module, sink_name, object_id, connection_overrides=None
 ):
