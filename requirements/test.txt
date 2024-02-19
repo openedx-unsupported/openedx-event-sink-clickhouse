@@ -15,7 +15,6 @@ asgiref==3.7.2
 backports-zoneinfo[tzdata]==0.2.1
     # via
     #   -r requirements/base.txt
-    #   backports-zoneinfo
     #   celery
     #   kombu
 billiard==4.2.0
@@ -63,9 +62,7 @@ code-annotations==1.6.0
     #   -r requirements/test.in
     #   edx-toggles
 coverage[toml]==7.4.1
-    # via
-    #   coverage
-    #   pytest-cov
+    # via pytest-cov
 ddt==1.7.1
     # via -r requirements/test.in
     # via
@@ -159,7 +156,7 @@ pynacl==1.5.0
     # via
     #   -r requirements/base.txt
     #   edx-django-utils
-pytest==8.0.0
+pytest==8.0.1
     # via
     #   pytest-cov
     #   pytest-django
@@ -189,7 +186,7 @@ requests==2.31.0
     # via
     #   -r requirements/base.txt
     #   responses
-responses==0.24.1
+responses==0.25.0
     # via -r requirements/test.in
 six==1.16.0
     # via
@@ -224,7 +221,7 @@ tzdata==2024.1
     #   -r requirements/base.txt
     #   backports-zoneinfo
     #   celery
-urllib3==2.2.0
+urllib3==2.2.1
     # via
     #   -r requirements/base.txt
     #   requests

@@ -23,7 +23,6 @@ babel==2.14.0
 backports-zoneinfo[tzdata]==0.2.1
     # via
     #   -r requirements/test.txt
-    #   backports-zoneinfo
     #   celery
     #   kombu
 beautifulsoup4==4.12.3
@@ -77,9 +76,8 @@ code-annotations==1.6.0
 coverage[toml]==7.4.1
     # via
     #   -r requirements/test.txt
-    #   coverage
     #   pytest-cov
-cryptography==42.0.2
+cryptography==42.0.3
     # via secretstorage
 ddt==1.7.1
     # via -r requirements/test.txt
@@ -238,7 +236,7 @@ pynacl==1.5.0
     #   edx-django-utils
 pyproject-hooks==1.0.0
     # via build
-pytest==8.0.0
+pytest==8.0.1
     # via
     #   -r requirements/test.txt
     #   pytest-cov
@@ -277,7 +275,7 @@ requests==2.31.0
     #   twine
 requests-toolbelt==1.0.0
     # via twine
-responses==0.24.1
+responses==0.25.0
     # via -r requirements/test.txt
 restructuredtext-lint==1.4.0
     # via doc8
@@ -352,7 +350,7 @@ tzdata==2024.1
     #   -r requirements/test.txt
     #   backports-zoneinfo
     #   celery
-urllib3==2.2.0
+urllib3==2.2.1
     # via
     #   -r requirements/test.txt
     #   requests

@@ -20,14 +20,13 @@ astroid==3.0.3
 backports-zoneinfo[tzdata]==0.2.1
     # via
     #   -r requirements/quality.txt
-    #   backports-zoneinfo
     #   celery
     #   kombu
 billiard==4.2.0
     # via
     #   -r requirements/quality.txt
     #   celery
-black==24.1.1
+black==24.2.0
     # via -r requirements/dev.in
 build==1.0.3
     # via
@@ -98,7 +97,6 @@ colorama==0.4.6
 coverage[toml]==7.4.1
     # via
     #   -r requirements/quality.txt
-    #   coverage
     #   pytest-cov
 ddt==1.7.1
     # via -r requirements/quality.txt
@@ -227,7 +225,7 @@ pbr==6.0.0
     # via
     #   -r requirements/quality.txt
     #   stevedore
-pip-tools==7.3.0
+pip-tools==7.4.0
     # via -r requirements/pip-tools.txt
 platformdirs==4.2.0
     # via
@@ -300,7 +298,8 @@ pyproject-hooks==1.0.0
     # via
     #   -r requirements/pip-tools.txt
     #   build
-pytest==8.0.0
+    #   pip-tools
+pytest==8.0.1
     # via
     #   -r requirements/quality.txt
     #   pytest-cov
@@ -332,7 +331,7 @@ requests==2.31.0
     # via
     #   -r requirements/quality.txt
     #   responses
-responses==0.24.1
+responses==0.25.0
     # via -r requirements/quality.txt
 six==1.16.0
     # via
@@ -375,7 +374,7 @@ tomlkit==0.12.3
     # via
     #   -r requirements/quality.txt
     #   pylint
-tox==4.12.1
+tox==4.13.0
     # via -r requirements/ci.txt
 typing-extensions==4.9.0
     # via
@@ -391,7 +390,7 @@ tzdata==2024.1
     #   -r requirements/quality.txt
     #   backports-zoneinfo
     #   celery
-urllib3==2.2.0
+urllib3==2.2.1
     # via
     #   -r requirements/quality.txt
     #   requests
