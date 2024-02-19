@@ -5,8 +5,8 @@ from django.db.models.signals import post_save
 from django.dispatch import Signal, receiver
 
 from event_sink_clickhouse.sinks.external_id_sink import ExternalIdSink
-from event_sink_clickhouse.sinks.user_retire import UserRetirementSink
 from event_sink_clickhouse.sinks.user_profile_sink import UserProfileSink
+from event_sink_clickhouse.sinks.user_retire import UserRetirementSink
 from event_sink_clickhouse.utils import get_model
 
 try:

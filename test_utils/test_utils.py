@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 from django.conf import settings
 
-from event_sink_clickhouse.utils import get_model
+from event_sink_clickhouse.utils import get_ccx_courses, get_model
 
 
 class TestUtils(unittest.TestCase):
@@ -71,3 +71,17 @@ class TestUtils(unittest.TestCase):
     def test_get_model_missing_model_config(self):
         model = get_model("my_model")
         self.assertIsNone(model)
+
+    @patch("event_sink_clickhouse.utils.get_model")
+    def test_get_ccx_courses(self, mock_get_model):
+        mock_get_model.return_value = mock_model = Mock()
+
+        get_ccx_courses('dummy_key')
+
+        mock_model.objects.filter.assert_called_once_with(course_id='dummy_key')
+
+    @patch.object(settings, "FEATURES", {"CUSTOM_COURSES_EDX": False})
+    def test_get_ccx_courses_feature_disabled(self):
+        courses = get_ccx_courses('dummy_key')
+
+        self.assertEqual(list(courses), [])

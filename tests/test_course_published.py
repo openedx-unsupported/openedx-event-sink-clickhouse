@@ -33,7 +33,14 @@ from test_utils.helpers import (
 @patch("event_sink_clickhouse.sinks.course_published.CourseOverviewSink.get_model")
 @patch("event_sink_clickhouse.sinks.course_published.get_detached_xblock_types")
 @patch("event_sink_clickhouse.sinks.course_published.get_modulestore")
-def test_course_publish_success(mock_modulestore, mock_detached, mock_overview, mock_serialize_item):
+@patch("event_sink_clickhouse.tasks.get_ccx_courses")
+def test_course_publish_success(
+    mock_get_ccx_courses,
+    mock_modulestore,
+    mock_detached,
+    mock_overview,
+    mock_serialize_item
+):
     """
     Test of a successful end-to-end run.
     """
@@ -48,6 +55,7 @@ def test_course_publish_success(mock_modulestore, mock_detached, mock_overview, 
     mock_detached.return_value = mock_detached_xblock_types()
 
     mock_overview.return_value.get_from_id.return_value = course_overview
+    mock_get_ccx_courses.return_value = []
 
     # Use the responses library to catch the POSTs to ClickHouse
     # and match them against the expected values, including CSV
@@ -75,6 +83,7 @@ def test_course_publish_success(mock_modulestore, mock_detached, mock_overview, 
     # Just to make sure we're not calling things more than we need to
     assert mock_modulestore.call_count == 1
     assert mock_detached.call_count == 1
+    mock_get_ccx_courses.assert_called_once_with(course_overview.id)
 
 
 @responses.activate(registry=OrderedRegistry)  # pylint: disable=unexpected-keyword-arg,no-value-for-parameter
