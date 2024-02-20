@@ -57,3 +57,12 @@ def get_detached_xblock_types():  # pragma: no cover
     from xmodule.modulestore.store_utilities import DETACHED_XBLOCK_TYPES
 
     return DETACHED_XBLOCK_TYPES
+
+
+def get_ccx_courses(course_id):
+    """
+    Get the CCX courses for a given course.
+    """
+    if settings.FEATURES.get("CUSTOM_COURSES_EDX"):
+        return get_model("custom_course_edx").objects.filter(course_id=course_id)
+    return []
