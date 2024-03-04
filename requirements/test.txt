@@ -16,6 +16,7 @@ backports-zoneinfo[tzdata]==0.2.1
     # via
     #   -r requirements/base.txt
     #   celery
+    #   django
     #   kombu
 billiard==4.2.0
     # via
@@ -63,7 +64,7 @@ code-annotations==1.6.0
     #   edx-toggles
 coverage[toml]==7.4.3
     # via pytest-cov
-ddt==1.7.1
+ddt==1.7.2
     # via -r requirements/test.in
     # via
     #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
@@ -156,7 +157,7 @@ pynacl==1.5.0
     # via
     #   -r requirements/base.txt
     #   edx-django-utils
-pytest==8.0.2
+pytest==8.1.0
     # via
     #   pytest-cov
     #   pytest-django
@@ -164,7 +165,7 @@ pytest-cov==4.1.0
     # via -r requirements/test.in
 pytest-django==4.8.0
     # via -r requirements/test.in
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via
     #   -r requirements/base.txt
     #   celery
@@ -175,7 +176,6 @@ python-slugify==8.0.4
 pytz==2024.1
     # via
     #   -r requirements/base.txt
-    #   django
     #   djangorestframework
 pyyaml==6.0.1
     # via
