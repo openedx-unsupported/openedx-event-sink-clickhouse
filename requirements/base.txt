@@ -39,7 +39,7 @@ click-repl==0.3.0
     # via celery
 code-annotations==1.6.0
     # via edx-toggles
-django==4.2.10
+django==4.2.11
     # via
     #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
     #   -r requirements/base.in
@@ -60,7 +60,7 @@ django-waffle==4.1.0
     #   edx-toggles
 djangorestframework==3.14.0
     # via django-rest-framework
-edx-django-utils==5.10.1
+edx-django-utils==5.11.0
     # via
     #   -r requirements/base.in
     #   edx-toggles
