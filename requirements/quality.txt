@@ -78,7 +78,7 @@ ddt==1.7.2
     # via -r requirements/test.txt
 dill==0.3.8
     # via pylint
-django==4.2.10
+django==4.2.11
     # via
     #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
     #   -r requirements/test.txt
@@ -108,7 +108,7 @@ djangorestframework==3.14.0
     #   -r requirements/test.txt
     #   django-mock-queries
     #   django-rest-framework
-edx-django-utils==5.10.1
+edx-django-utils==5.11.0
     # via
     #   -r requirements/test.txt
     #   edx-toggles
@@ -156,7 +156,7 @@ newrelic==9.7.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
-packaging==23.2
+packaging==24.0
     # via
     #   -r requirements/test.txt
     #   pytest
@@ -208,7 +208,7 @@ pynacl==1.5.0
     # via
     #   -r requirements/test.txt
     #   edx-django-utils
-pytest==8.1.0
+pytest==8.1.1
     # via
     #   -r requirements/test.txt
     #   pytest-cov
