@@ -22,12 +22,13 @@ backports-zoneinfo[tzdata]==0.2.1
     #   -r requirements/quality.txt
     #   celery
     #   django
+    #   djangorestframework
     #   kombu
 billiard==4.2.0
     # via
     #   -r requirements/quality.txt
     #   celery
-black==24.2.0
+black==24.3.0
     # via -r requirements/dev.in
 build==1.1.1
     # via
@@ -86,7 +87,7 @@ click-repl==0.3.0
     # via
     #   -r requirements/quality.txt
     #   celery
-code-annotations==1.6.0
+code-annotations==1.7.0
     # via
     #   -r requirements/quality.txt
     #   edx-lint
@@ -95,7 +96,7 @@ colorama==0.4.6
     # via
     #   -r requirements/ci.txt
     #   tox
-coverage[toml]==7.4.3
+coverage[toml]==7.4.4
     # via
     #   -r requirements/quality.txt
     #   pytest-cov
@@ -137,7 +138,7 @@ django-waffle==4.1.0
     #   -r requirements/quality.txt
     #   edx-django-utils
     #   edx-toggles
-djangorestframework==3.14.0
+djangorestframework==3.15.0
     # via
     #   -r requirements/quality.txt
     #   django-mock-queries
@@ -167,8 +168,9 @@ idna==3.6
     # via
     #   -r requirements/quality.txt
     #   requests
-importlib-metadata==7.0.2
+importlib-metadata==6.11.0
     # via
+    #   -c https://raw.githubusercontent.com/edx/edx-lint/master/edx_lint/files/common_constraints.txt
     #   -r requirements/pip-tools.txt
     #   build
 iniconfig==2.0.0
@@ -204,7 +206,7 @@ model-bakery==1.17.0
     #   django-mock-queries
 mypy-extensions==1.0.0
     # via black
-newrelic==9.7.0
+newrelic==9.7.1
     # via
     #   -r requirements/quality.txt
     #   edx-django-utils
@@ -317,10 +319,6 @@ python-slugify==8.0.4
     # via
     #   -r requirements/quality.txt
     #   code-annotations
-pytz==2024.1
-    # via
-    #   -r requirements/quality.txt
-    #   djangorestframework
 pyyaml==6.0.1
     # via
     #   -r requirements/quality.txt
@@ -409,11 +407,11 @@ wcwidth==0.2.13
     # via
     #   -r requirements/quality.txt
     #   prompt-toolkit
-wheel==0.42.0
+wheel==0.43.0
     # via
     #   -r requirements/pip-tools.txt
     #   pip-tools
-zipp==3.17.0
+zipp==3.18.1
     # via
     #   -r requirements/pip-tools.txt
     #   importlib-metadata
