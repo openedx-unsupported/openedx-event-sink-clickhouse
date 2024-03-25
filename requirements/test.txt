@@ -8,7 +8,7 @@ amqp==5.2.0
     # via
     #   -r requirements/base.txt
     #   kombu
-asgiref==3.7.2
+asgiref==3.8.1
     # via
     #   -r requirements/base.txt
     #   django
@@ -46,7 +46,7 @@ click==8.1.7
     #   click-repl
     #   code-annotations
     #   edx-django-utils
-click-didyoumean==0.3.0
+click-didyoumean==0.3.1
     # via
     #   -r requirements/base.txt
     #   celery
@@ -91,7 +91,7 @@ django-waffle==4.1.0
     #   -r requirements/base.txt
     #   edx-django-utils
     #   edx-toggles
-djangorestframework==3.15.0
+djangorestframework==3.15.1
     # via
     #   -r requirements/base.txt
     #   django-mock-queries
@@ -162,7 +162,7 @@ pytest==8.1.1
     # via
     #   pytest-cov
     #   pytest-django
-pytest-cov==4.1.0
+pytest-cov==5.0.0
     # via -r requirements/test.in
 pytest-django==4.8.0
     # via -r requirements/test.in
