@@ -8,7 +8,7 @@ amqp==5.2.0
     # via
     #   -r requirements/quality.txt
     #   kombu
-asgiref==3.7.2
+asgiref==3.8.1
     # via
     #   -r requirements/quality.txt
     #   django
@@ -71,7 +71,7 @@ click==8.1.7
     #   edx-django-utils
     #   edx-lint
     #   pip-tools
-click-didyoumean==0.3.0
+click-didyoumean==0.3.1
     # via
     #   -r requirements/quality.txt
     #   celery
@@ -138,7 +138,7 @@ django-waffle==4.1.0
     #   -r requirements/quality.txt
     #   edx-django-utils
     #   edx-toggles
-djangorestframework==3.15.0
+djangorestframework==3.15.1
     # via
     #   -r requirements/quality.txt
     #   django-mock-queries
@@ -307,7 +307,7 @@ pytest==8.1.1
     #   -r requirements/quality.txt
     #   pytest-cov
     #   pytest-django
-pytest-cov==4.1.0
+pytest-cov==5.0.0
     # via -r requirements/quality.txt
 pytest-django==4.8.0
     # via -r requirements/quality.txt
@@ -372,7 +372,7 @@ tomlkit==0.12.4
     # via
     #   -r requirements/quality.txt
     #   pylint
-tox==4.14.1
+tox==4.14.2
     # via -r requirements/ci.txt
 typing-extensions==4.10.0
     # via
