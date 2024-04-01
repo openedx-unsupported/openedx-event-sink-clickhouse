@@ -30,7 +30,7 @@ billiard==4.2.0
     #   celery
 black==24.3.0
     # via -r requirements/dev.in
-build==1.1.1
+build==1.2.1
     # via
     #   -r requirements/pip-tools.txt
     #   pip-tools
@@ -143,7 +143,7 @@ djangorestframework==3.15.1
     #   -r requirements/quality.txt
     #   django-mock-queries
     #   django-rest-framework
-edx-django-utils==5.11.0
+edx-django-utils==5.12.0
     # via
     #   -r requirements/quality.txt
     #   edx-toggles
@@ -159,7 +159,7 @@ exceptiongroup==1.2.0
     # via
     #   -r requirements/quality.txt
     #   pytest
-filelock==3.13.1
+filelock==3.13.3
     # via
     #   -r requirements/ci.txt
     #   tox
@@ -186,11 +186,11 @@ jinja2==3.1.3
     #   -r requirements/quality.txt
     #   code-annotations
     #   diff-cover
-kombu==5.3.5
+kombu==5.3.6
     # via
     #   -r requirements/quality.txt
     #   celery
-lxml==5.1.0
+lxml==5.2.0
     # via edx-i18n-tools
 markupsafe==2.1.5
     # via
@@ -206,7 +206,7 @@ model-bakery==1.17.0
     #   django-mock-queries
 mypy-extensions==1.0.0
     # via black
-newrelic==9.7.1
+newrelic==9.8.0
     # via
     #   -r requirements/quality.txt
     #   edx-django-utils
@@ -257,7 +257,7 @@ psutil==5.9.8
     #   edx-django-utils
 pycodestyle==2.11.1
     # via -r requirements/quality.txt
-pycparser==2.21
+pycparser==2.22
     # via
     #   -r requirements/quality.txt
     #   cffi
